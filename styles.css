@@ -1,5 +1,4 @@
-/* styles.css */
-
+/* Estilos base para pantallas grandes */
 body {
     font-family: Arial, sans-serif;
     margin: 40px;
@@ -74,4 +73,45 @@ tr:nth-child(even) {
 
 tr:hover {
     background-color: #ddd;
+}
+
+/* Estilos para pantallas más pequeñas (tablets y móviles) */
+@media (max-width: 768px) {
+    body {
+        margin: 20px;
+    }
+
+    #analyzeButton, #exportButton {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 16px;
+        padding: 10px;
+    }
+
+    #poemInput {
+        height: 150px;
+        font-size: 14px;
+    }
+}
+
+/* Estilos para pantallas muy pequeñas (móviles en vertical) */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 24px;
+    }
+
+    #poemInput {
+        height: 120px;
+        font-size: 14px;
+    }
+
+    #analyzeButton, #exportButton {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    th, td {
+        font-size: 12px;
+        padding: 8px;
+    }
 }
