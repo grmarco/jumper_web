@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Analizador de Rimas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-size: 14px;
+      padding: 10px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    .result {
+      margin-top: 20px;
+      background: #f8f8f8;
+      padding: 15px;
+      border: 1px solid #ddd;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Analizador de Rimas</h1>
+  <textarea id="poemInput" placeholder="Introduce el poema aquí..."></textarea>
+  <br>
+  <button id="analyzeButton">Analizar Poema</button>
+  <div id="resultContainer" class="result"></div>
+
+  <!-- Se importa el fichero JavaScript con el analizador -->
+  <script src="rhymeAnalyzer.js"></script>
+  <script>
+    document.getElementById('analyzeButton').addEventListener('click', function() {
+      const poem = document.getElementById('poemInput').value;
+      const result = SpanishRhymeAnnotator.getRhymeScheme(poem);
+      
+      let output = "<h2>Esquema de Rima</h2>";
+      output += "<p><strong>Esquema:</strong> " + result.scheme + "</p>";
+      
+      output += "<h3>Detalles por Línea</h3>";
+      output += "<pre>" + JSON.stringify(result.details, null, 2) + "</pre>";
+      
+      output += "<h3>Grupos de Rima</h3>";
+      output += "<pre>" + JSON.stringify(result.groups, null, 2) + "</pre>";
+      
+      document.getElementById('resultContainer').innerHTML = output;
+    });
+  </script>
+</body>
+</html>

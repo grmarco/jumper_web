@@ -1,6 +1,20 @@
-// metricAnalyzer.js
+/**
+ * Módulo de análisis métrico de poemas en español
+ * 
+ * Mejoras implementadas:
+ * - Separación en secciones (configuración, utilidades, análisis, presentación)
+ * - Funciones con nombres descriptivos y comentarios (JSDoc)
+ * - Uso de objetos en lugar de arrays “mágicos” en los resultados
+ * - Constantes para recursos métricos y uso uniforme del español
+ * - Corrección especial para casos de endecasílabo en que se cuenta 10 sílabas y el acento cae en la 5ª
+ *   (rompiendo la sinalefa conflictiva y desplazando el acento a la 6ª sílaba).
+ */
 
-// Constantes y Datos Iniciales
+"use strict";
+
+// ==============================
+// Configuración y Datos Estáticos
+// ==============================
 
 const nombreVerso = [
     '',
@@ -27,11 +41,11 @@ const tiposVerso = [
     [['', [1]]],
     [['', [2]]],
     [['', [1, 3]], ['', [3]]],
-    // pentasílabos
+    // Pentasílabos
     [['heroico', [2, 4]], ['sáfico', [4]], ['dactílico', [1, 4]]],
-    // hexasílabos
+    // Hexasílabos
     [['heroico', [2, 5]], ['melódico puro', [3, 5]], ['melódico pleno', [1, 3, 5]], ['enfático', [1, 5]], ['vacío', [5]]],
-    // heptasílabos
+    // Heptasílabos
     [
         ['heroico puro', [2, 6]],
         ['heroico pleno', [2, 4, 6]],
@@ -42,7 +56,7 @@ const tiposVerso = [
         ['enfático', [1, 6]],
         ['vacío', [6]]
     ],
-    // octosílabos
+    // Octosílabos
     [
         ['heroico puro', [2, 4, 7]],
         ['heroico pleno', [2, 5, 7]],
@@ -58,7 +72,7 @@ const tiposVerso = [
         ['vacío corto', [5, 7]],
         ['vacío largo', [7]]
     ],
-    // eneasílabos
+    // Eneasílabos
     [
         ['heroico puro corto', [2, 4, 8]],
         ['heroico pleno', [2, 4, 6, 8]],
@@ -82,7 +96,7 @@ const tiposVerso = [
         ['vacío largo', [8]],
         ['vacío difuso', [5, 8]]
     ],
-    // decasílabos
+    // Decasílabos
     [
         ['heroico hemistiquial puro', [2, 4, 9]],
         ['heroico hemistiquial pleno', [2, 4, 6, 9]],
@@ -116,7 +130,7 @@ const tiposVerso = [
         ['vacío difuso', [5, 9]],
         ['vacío largo', [5, 7, 9]]
     ],
-    // endecasílabos
+    // Endecasílabos
     [
         ['heroico puro', [2, 6, 10]],
         ['heroico pleno', [2, 4, 6, 8, 10]],
@@ -145,821 +159,1095 @@ const tiposVerso = [
     ]
 ];
 
-// Definiciones de Vocales y Otros Elementos
+// Constantes para recursos métricos
+const RECURSOS_METRICOS = {
+  SINALEFA: 'Sinalefa',
+  DIALEFA: 'Dialefa',
+  SINERESIS: 'Sineresis',
+  DIERESIS: 'Diéresis'
+};
 
+// Factores para clasificación de acentuación
+const FACTOR_AGUDA = 1;
+const FACTOR_LLANA = 0;
+const FACTOR_ESDRUJULA = -1;
+
+// Configuración de vocales, diptongos y palabras átonas
 const vocalesNoAcentuadas = ['a', 'e', 'i', 'o', 'u'];
 const vocalesAcentuadas = ['á', 'é', 'í', 'ó', 'ú'];
 const deNoAcentuadas = {
-    'a': 'á',
-    'e': 'é',
-    'i': 'í',
-    'o': 'ó',
-    'u': 'ú',
-    'ï': 'ï',
-    'ü': 'ü'
+  'a': 'á',
+  'e': 'é',
+  'i': 'í',
+  'o': 'ó',
+  'u': 'ú',
+  'ï': 'ï',
+  'ü': 'ü'
 };
 const dieresis = ['ï', 'ü'];
 const vocales = [...vocalesNoAcentuadas, ...vocalesAcentuadas, ...dieresis];
 const vocalesY = [...vocales, 'y'];
 const diptongos = [
-    'ai', 'au', 'ei', 'eu', 'oi', 'ou', 'ui', 'iu',
-    'ia', 'ua', 'ie', 'ue', 'io', 'uo', 'ió', 'ey',
-    'oy', 'ié', 'éi', 'ué', 'ái', 'iá', 'uá'
+  'ai', 'au', 'ei', 'eu', 'oi', 'ou', 'ui', 'iu',
+  'ia', 'ua', 'ie', 'ue', 'io', 'uo', 'ió', 'ey',
+  'oy', 'ié', 'éi', 'ué', 'ái', 'iá', 'uá'
 ];
 
 const atonasAVecesAcentuadas = {
-    'oh': 'ó',
-    'quien': 'quién',
-    'do': 'dó'
+  'oh': 'ó',
+  'quien': 'quién',
+  'do': 'dó'
 };
 
 const atonas = [
-    'el', 'los', 'la', 'las', 'me', 'nos', 'te', 'os', 'lo', 'le', 'les', 'se', 'mi',
-    'mis', 'tu', 'tus', 'su', 'sus', 'nuestro', 'nuestros', 'nuestra', 'nuestras', 'vuestro',
-    'vuestra', 'vuestros', 'vuestras', 'que', 'quien', 'quienes', 'cuyo', 'cuya', 'cuyos',
-    'cuyas', 'cual', 'cuales', 'como', 'cuando', 'do', 'donde', 'adonde', 'cuan', 'tan',
-    'cuanto', 'cuanta', 'cuantos', 'cuantas', 'a', 'ante', 'bajo', 'cabe', 'con', 'contra',
-    'de', 'desde', 'durante', 'en', 'entre', 'hacia', 'hasta', 'mediante', 'para', 'por',
-    'sin', 'so', 'sobre', 'tras', 'versus', 'aunque', 'conque', 'cuando', 'mas',
-    'mientras', 'ni', 'o', 'u', 'pero', 'porque', 'pues', 'que', 'si', 'sino', 'y', 'e',
-    'aun', 'excepto', 'hasta', 'incluso', 'don', 'doña', 'fray', 'frey', 'san', 'sor',
-    'al', 'del', 'desde'
+  'el', 'los', 'la', 'las', 'me', 'nos', 'te', 'os', 'lo', 'le', 'les', 'se', 'mi',
+  'mis', 'tu', 'tus', 'su', 'sus', 'nuestro', 'nuestros', 'nuestra', 'nuestras', 'vuestro',
+  'vuestra', 'vuestros', 'vuestras', 'que', 'quien', 'quienes', 'cuyo', 'cuya', 'cuyos',
+  'cuyas', 'cual', 'cuales', 'como', 'cuando', 'do', 'donde', 'adonde', 'cuan', 'tan',
+  'cuanto', 'cuanta', 'cuantos', 'cuantas', 'a', 'ante', 'bajo', 'cabe', 'con', 'contra',
+  'de', 'desde', 'durante', 'en', 'entre', 'hacia', 'hasta', 'mediante', 'para', 'por',
+  'sin', 'so', 'sobre', 'tras', 'versus', 'aunque', 'conque', 'cuando', 'mas',
+  'mientras', 'ni', 'o', 'u', 'pero', 'porque', 'pues', 'que', 'si', 'sino', 'y', 'e',
+  'aun', 'excepto', 'hasta', 'incluso', 'don', 'doña', 'fray', 'frey', 'san', 'sor',
+  'al', 'del', 'desde'
 ];
 
 const puntos = [
-    ':', ',', '.', ';', '.', '–', '(', ')', '\n', '\r',
-    '¿', '?', '!', '¡', '—', '»', '”', '“', '«', '-', '/', '//'
+  ':', ',', '.', ';', '–', '(', ')', '\n', '\r',
+  '¿', '?', '!', '¡', '—', '»', '”', '“', '«', '-', '/', '//'
 ];
 
-// Factores de Clasificación de Versos
-const FACTOR_AGUDA = 1;
-const FACTOR_LLANA = 0;
-const FACTOR_ESDRUJULA = -1;
+// ==============================
+// Utilidades de Texto y Fonéticas
+// ==============================
 
 /**
- * MÓDULO DE ANÁLISIS DE PALABRA: CÁLCULO DE SÍLABAS Y ACENTOS DE PALABRAS
+ * Elimina la puntuación de un texto.
+ * @param {string} texto 
+ * @returns {string}
  */
-
-// Función para quitar puntuación de un texto
 function quitarPuntuacion(texto) {
-    const quitar = [
-        ':', ',', '.', ';', '.', '–', '(', ')', '\n', '\r',
-        '¿', '?', '!', '¡', '—', '»', '”', '“', '«', '-', '/', '//'
-    ];
-    quitar.forEach(q => {
-        texto = texto.split(q).join('');
-    });
-    return texto;
+  const caracteresQuitar = [':', ',', '.', ';', '–', '(', ')', '\n', '\r', '¿', '?', '!', '¡', '—', '»', '”', '“', '«', '-', '/', '//'];
+  caracteresQuitar.forEach(caracter => {
+    texto = texto.split(caracter).join('');
+  });
+  return texto;
 }
 
-// Función para normalizar un texto (quita puntuación, mayúsculas y espacios laterales)
+/**
+ * Normaliza el texto: quita puntuación, espacios extra y pasa a minúsculas.
+ * @param {string} texto 
+ * @returns {string}
+ */
 function normalizar(texto) {
-    return quitarPuntuacion(texto).trim().toLowerCase();
+  return quitarPuntuacion(texto).trim().toLowerCase();
 }
 
-// Función para normalizar palabras con dígrafos "qu" y "gu"
+/**
+ * Normaliza palabras con dígrafos "qu" y "gu".
+ * @param {string} palabra 
+ * @returns {string}
+ */
 function normalizarQuGu(palabra) {
-    const quitar = [
-        { original: 'qu', reemplazo: 'q' },
-        { original: 'gue', reemplazo: 'ge' },
-        { original: 'gui', reemplazo: 'gi' }
-    ];
-    quitar.forEach(q => {
-        palabra = palabra.split(q.original).join(q.reemplazo);
-    });
-    return palabra;
+  const cambios = [
+    { original: 'qu', reemplazo: 'q' },
+    { original: 'gue', reemplazo: 'ge' },
+    { original: 'gui', reemplazo: 'gi' }
+  ];
+  cambios.forEach(cambio => {
+    palabra = palabra.split(cambio.original).join(cambio.reemplazo);
+  });
+  return palabra;
 }
 
-// Función para verificar si una palabra empieza por vocal o "h" seguida de vocal
+/**
+ * Verifica si la palabra empieza por vocal o por 'h' seguida de vocal.
+ * @param {string} palabra 
+ * @returns {boolean}
+ */
 function empiezaPorVocal(palabra) {
-    return vocalesY.includes(palabra[0]) || (palabra[0] === 'h' && vocalesY.includes(palabra[1]));
+  return vocalesY.includes(palabra[0]) || (palabra[0] === 'h' && vocalesY.includes(palabra[1]));
 }
 
-// Función para verificar si una palabra termina por vocal o "h" precedida de vocal
+/**
+ * Verifica si la palabra termina por vocal o 'h' precedida de vocal.
+ * @param {string} palabra 
+ * @returns {boolean}
+ */
 function terminaPorVocal(palabra) {
-    const len = palabra.length;
-    return vocalesY.includes(palabra[len - 1]) || (palabra[len - 1] === 'h' && vocalesY.includes(palabra[len - 2]));
-}
-
-// Función para comprobar si la "y" griega no es vocálica en una palabra
-function yeye(palabra) {
-    const primeraY = palabra.slice(0, 2);
-    const primeraTres = palabra.slice(0, 3);
-    return (
-        vocales.some(v => primeraY === 'y' + v) ||
-        ['hie', 'hue', 'hon'].includes(primeraTres)
-    );
-}
-
-// Función para calcular sílabas, acentos y factor de una palabra
-function palabraSilabasAcentos(palabra) {
-    if (palabra.length === 1) {
-        return [1, 1, FACTOR_AGUDA];
-    }
-
-    let factorFinal = 0;
-    let numSilabas = 0;
-    let palabraNorm = normalizarQuGu(palabra);
-    let acento = null;
-
-    for (let i = 0; i < palabraNorm.length; i++) {
-        const c = palabraNorm[i];
-        if (vocales.includes(c)) {
-            numSilabas += 1;
-            if (
-                i > 0 &&
-                diptongos.includes(palabraNorm[i - 1] + c) &&
-                !dieresis.includes(palabraNorm[i - 1]) &&
-                numSilabas > 1
-            ) {
-                numSilabas -= 1;
-            }
-            if (vocalesAcentuadas.includes(c)) {
-                acento = numSilabas;
-            }
-        }
-    }
-
-    // Determinar acento si no hay tilde explícita
-    if (acento === null) {
-        const ultimaLetra = palabraNorm[palabraNorm.length - 1];
-        if (['n', 's', ...vocales].includes(ultimaLetra)) {
-            acento = numSilabas - 1;
-        } else {
-            acento = numSilabas;
-        }
-    }
-
-    if (numSilabas === 1) {
-        acento = 1;
-    }
-
-    // Determinar el factor
-    const factor = numSilabas - acento;
-    if (factor === 0) {
-        factorFinal = FACTOR_AGUDA;
-    } else if (factor === 1) {
-        factorFinal = FACTOR_LLANA;
-    } else if (factor > 1) {
-        factorFinal = FACTOR_ESDRUJULA;
-    }
-
-    return [numSilabas, acento, factorFinal];
+  const len = palabra.length;
+  return vocalesY.includes(palabra[len - 1]) || (palabra[len - 1] === 'h' && vocalesY.includes(palabra[len - 2]));
 }
 
 /**
- * SUBMÓDULO DE AMBIGUEDADES: FUNCIONES PARA LA COMPARACIÓN DE VECTORES DE ACENTOS
+ * Verifica si la "y" griega actúa como vocal en la palabra.
+ * @param {string} palabra 
+ * @returns {boolean}
  */
+function esYVocalica(palabra) {
+  const primeraDos = palabra.slice(0, 2);
+  const primeraTres = palabra.slice(0, 3);
+  return (
+    vocales.some(v => primeraDos === 'y' + v) ||
+    ['hie', 'hue', 'hon'].includes(primeraTres)
+  );
+}
 
-// Función para convertir un vector de acentos a vector binario
+// ==============================
+// Análisis de Palabra: Sílabas y Acentos
+// ==============================
+
+/**
+ * Analiza una palabra y retorna su número de sílabas, posición del acento y factor (aguda, llana, esdrújula).
+ * @param {string} palabra 
+ * @returns {{silabas: number, acento: number, factor: number}}
+ */
+function analizarPalabra(palabra) {
+  if (palabra.length === 1) {
+    return { silabas: 1, acento: 1, factor: FACTOR_AGUDA };
+  }
+  let numSilabas = 0;
+  let acentoPos = null;
+  const palabraNormal = normalizarQuGu(palabra);
+
+  for (let i = 0; i < palabraNormal.length; i++) {
+    const c = palabraNormal[i];
+    if (vocales.includes(c)) {
+      numSilabas++;
+      // Verificar diptongo
+      if (
+        i > 0 &&
+        diptongos.includes(palabraNormal[i - 1] + c) &&
+        !dieresis.includes(palabraNormal[i - 1]) &&
+        numSilabas > 1
+      ) {
+        numSilabas--;
+      }
+      if (vocalesAcentuadas.includes(c)) {
+        acentoPos = numSilabas;
+      }
+    }
+  }
+
+  // Si no hay tilde, se determina el acento por regla general
+  if (acentoPos === null) {
+    const ultimaLetra = palabraNormal[palabraNormal.length - 1];
+    if (['n', 's', ...vocales].includes(ultimaLetra)) {
+      acentoPos = numSilabas - 1;
+    } else {
+      acentoPos = numSilabas;
+    }
+  }
+
+  if (numSilabas === 1) {
+    acentoPos = 1;
+  }
+
+  const diferencia = numSilabas - acentoPos;
+  let factorFinal = 0;
+  if (diferencia === 0) {
+    factorFinal = FACTOR_AGUDA;
+  } else if (diferencia === 1) {
+    factorFinal = FACTOR_LLANA;
+  } else if (diferencia > 1) {
+    factorFinal = FACTOR_ESDRUJULA;
+  }
+
+  return { silabas: numSilabas, acento: acentoPos, factor: factorFinal };
+}
+
+// ==============================
+// Ambigüedades: Comparación de Acentos
+// ==============================
+
+/**
+ * Convierte un vector de acentos a un vector binario.
+ * @param {number[]} vector 
+ * @returns {boolean[]}
+ */
 function convertirAVectorBinario(vector) {
-    const vecBinario = [];
-    const vecOp = [...vector];
-    const longitud = vector[vector.length - 1];
-    for (let j = 1; j <= longitud; j++) {
-        if (vecOp.length > 0 && j === vecOp[0]) {
-            vecBinario.push(true);
-            vecOp.shift();
-        } else {
-            vecBinario.push(false);
-        }
+  const vecBinario = [];
+  const vecOp = [...vector];
+  const longitud = vector[vector.length - 1];
+  for (let j = 1; j <= longitud; j++) {
+    if (vecOp.length > 0 && j === vecOp[0]) {
+      vecBinario.push(true);
+      vecOp.shift();
+    } else {
+      vecBinario.push(false);
     }
-    return vecBinario;
+  }
+  return vecBinario;
 }
 
-// Función para comparar dos vectores de acentos y devolver un ratio de coincidencia
+/**
+ * Compara dos vectores de acentos y retorna un ratio de coincidencia.
+ * @param {number[]} vecAcentos1 
+ * @param {number[]} vecAcentos2 
+ * @returns {number} Ratio de coincidencia (0 a 1)
+ */
 function compararAcentos(vecAcentos1, vecAcentos2) {
-    if (vecAcentos1[vecAcentos1.length - 1] !== vecAcentos2[vecAcentos2.length - 1]) {
-        return 0;
+  if (vecAcentos1[vecAcentos1.length - 1] !== vecAcentos2[vecAcentos2.length - 1]) {
+    return 0;
+  }
+  const comp1 = convertirAVectorBinario(vecAcentos1);
+  const comp2 = convertirAVectorBinario(vecAcentos2);
+  let puntosVec = 0;
+  for (let i = 0; i < comp1.length; i++) {
+    if (comp1[i] === comp2[i]) {
+      puntosVec++;
     }
-
-    const comp1 = convertirAVectorBinario(vecAcentos1);
-    const comp2 = convertirAVectorBinario(vecAcentos2);
-    let puntosVec = 0;
-    for (let i = 0; i < comp1.length; i++) {
-        if (comp1[i] === comp2[i]) {
-            puntosVec += 1;
-        }
-    }
-    return puntosVec / comp1.length;
-}
-
-// Función para clasificar un verso basado en el número de sílabas y acentos
-function clasificar(numSilabas, acentos) {
-    const nombre = numSilabas <= 18 ? nombreVerso[numSilabas - 1] : 'versículo';
-    let mejorTipo = ['', []];
-    let mejorRatio = 0;
-
-    if (numSilabas <= 11) {
-        tiposVerso.forEach(tipo => {
-            if (tipo[0][1][tipo[0][1].length - 1] === acentos[acentos.length - 1]) {
-                tipo.forEach(subtipo => {
-                    const ratioV = compararAcentos(acentos, subtipo[1]);
-                    if (ratioV > mejorRatio) {
-                        mejorRatio = ratioV;
-                        mejorTipo = subtipo;
-                    }
-                });
-            }
-        });
-    } else {
-        // Retornar un arreglo vacío para acentosIdeales si no se clasifica
-        return [nombre, [], 1.0];
-    }
-
-    return [`${nombre} ${mejorTipo[0]}`, mejorTipo[1], mejorRatio];
+  }
+  return puntosVec / comp1.length;
 }
 
 /**
- * SUBMÓDULO DE TRATAMIENTO DE AMBIGUEDADES
+ * Clasifica un verso según su número de sílabas y acentos.
+ * @param {number} numSilabas 
+ * @param {number[]} acentos 
+ * @returns {{nombre: string, acentosIdeales: number[], ratio: number}}
  */
+function clasificarVerso(numSilabas, acentos) {
+  const nombre = numSilabas <= 18 ? nombreVerso[numSilabas - 1] : 'versículo';
+  let mejorTipo = ['', []];
+  let mejorRatio = 0;
 
-// Función para verificar la presencia de un diptongo en una palabra
+  if (numSilabas <= 11) {
+    tiposVerso.forEach(tipo => {
+      if (tipo[0][1][tipo[0][1].length - 1] === acentos[acentos.length - 1]) {
+        tipo.forEach(subtipo => {
+          const ratioV = compararAcentos(acentos, subtipo[1]);
+          if (ratioV > mejorRatio) {
+            mejorRatio = ratioV;
+            mejorTipo = subtipo;
+          }
+        });
+      }
+    });
+  } else {
+    return { nombre: nombre, acentosIdeales: [], ratio: 1.0 };
+  }
+
+  return {
+    nombre: `${nombre} ${mejorTipo[0]}`,
+    acentosIdeales: mejorTipo[1],
+    ratio: mejorRatio
+  };
+}
+
+// ==============================
+// Tratamiento de Ambigüedades: Hiato, Sineresis y Diéresis
+// ==============================
+
+/**
+ * Verifica si una palabra contiene un diptongo.
+ * @param {string} palabra 
+ * @returns {boolean}
+ */
 function hayDiptongo(palabra) {
-    const palabraNorm = normalizarQuGu(palabra);
-    return diptongos.some(dip => palabraNorm.includes(dip));
+  const palabraNorm = normalizarQuGu(palabra);
+  return diptongos.some(dip => palabraNorm.includes(dip));
 }
 
-// Función para verificar la presencia de un hiato en una palabra
+/**
+ * Verifica si una palabra contiene hiato.
+ * @param {string} palabra 
+ * @returns {boolean}
+ */
 function hayHiato(palabra) {
-    const palabraSinH = palabra.replace(/h/g, '');
-    for (let i = 0; i < palabraSinH.length - 1; i++) {
-        const current = palabraSinH[i];
-        const next = palabraSinH[i + 1];
-        if (vocales.includes(current) && vocales.includes(next) && !diptongos.includes(current + next)) {
-            return true;
-        }
+  const palabraSinH = palabra.replace(/h/g, '');
+  for (let i = 0; i < palabraSinH.length - 1; i++) {
+    const current = palabraSinH[i];
+    const next = palabraSinH[i + 1];
+    if (vocales.includes(current) && vocales.includes(next) && !diptongos.includes(current + next)) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
-// Función para eliminar hiato (sineresis) y etiquetarlo
+/**
+ * Elimina el hiato en una palabra aplicando sinéresis y marcándolo con un símbolo.
+ * @param {string} palabraOp 
+ * @returns {string}
+ */
 function quitarHiato(palabraOp) {
-    const simboloSineresis = '#';
-    let palabra = palabraOp.split('').join('').replace(/h/g, '');
-    const [sPalabraOp, aPalabraOp, fPalabraOp] = palabraSilabasAcentos(palabraOp);
-    let yaTildada = false;
-
-    for (let i = 0; i < palabraOp.length - 1; i++) {
-        const cActual = palabraOp[i];
-        const cSiguiente = palabraOp[i + 1];
-        if (vocales.includes(cActual) && vocales.includes(cSiguiente) && !diptongos.includes(cActual + cSiguiente)) {
-            if (vocalesAcentuadas.includes(cSiguiente)) {
-                palabra = palabra.slice(0, i) + palabra.slice(i + 1);
-            } else if (vocalesAcentuadas.includes(cActual)) {
-                palabra = palabra.slice(0, i + 1) + palabra.slice(i + 2);
-            } else {
-                palabra = palabra.slice(0, i) + palabra.slice(i + 1);
-                // Hay que mantener el acento
-                const [sPalabra, aPalabra] = palabraSilabasAcentos(palabra);
-                // Colocamos el acento cuando la palabra tiene 3 sílabas o menos
-                if (!yaTildada && fPalabraOp !== FACTOR_AGUDA && aPalabra !== aPalabraOp && sPalabraOp <= 3) {
-                    palabra = palabra.slice(0, i) + deNoAcentuadas[palabra[i]] + palabra.slice(i + 1);
-                }
-            }
-            // Insertamos símbolo para indicar la operación de sineresis
-            if (i === 1 || i === palabra.length - 1) {
-                palabra = palabra.slice(0, i) + simboloSineresis + palabra.slice(i);
-            }
-        }
+  const simboloSineresis = '#';
+  let palabra = palabraOp.replace(/h/g, '');
+  for (let i = 0; i < palabraOp.length - 1; i++) {
+    const cActual = palabraOp[i];
+    const cSiguiente = palabraOp[i + 1];
+    if (
+      vocales.includes(cActual) &&
+      vocales.includes(cSiguiente) &&
+      !diptongos.includes(cActual + cSiguiente)
+    ) {
+      if (vocalesAcentuadas.includes(cSiguiente)) {
+        palabra = palabra.slice(0, i) + palabra.slice(i + 1);
+      } else if (vocalesAcentuadas.includes(cActual)) {
+        palabra = palabra.slice(0, i + 1) + palabra.slice(i + 2);
+      } else {
+        palabra = palabra.slice(0, i) + palabra.slice(i + 1);
+      }
+      if (i === 1 || i === palabra.length - 1) {
+        palabra = palabra.slice(0, i) + simboloSineresis + palabra.slice(i);
+      }
     }
-
-    return palabra;
+  }
+  return palabra;
 }
 
-// Función para separar un diptongo en una palabra (dieresis)
+/**
+ * Separa un diptongo en una palabra para aplicar diéresis.
+ * @param {string} palabra 
+ * @returns {string}
+ */
 function separarDiptongo(palabra) {
-    const palabraNorm = normalizarQuGu(palabra);
-    for (let dip of diptongos) {
-        const lugarDip = palabraNorm.indexOf(dip);
-        if (lugarDip > -1 && !yeye(palabraNorm.slice(lugarDip + 1, lugarDip + 3))) {
-            return palabraNorm.slice(0, lugarDip + 1) + '~' + palabraNorm.slice(lugarDip + 1);
+  const palabraNorm = normalizarQuGu(palabra);
+  for (let dip of diptongos) {
+    const lugarDip = palabraNorm.indexOf(dip);
+    if (lugarDip > -1 && !esYVocalica(palabraNorm.slice(lugarDip + 1, lugarDip + 3))) {
+      return palabraNorm.slice(0, lugarDip + 1) + '~' + palabraNorm.slice(lugarDip + 1);
+    }
+  }
+  return palabra;
+}
+
+/**
+ * Combina ambigüedades en versos basándose en un símbolo.
+ * @param {string[]} versosAmb 
+ * @param {string} simbolo 
+ * @returns {string[]} Versos resultantes con la ambigüedad combinada.
+ */
+function combinarConSimbolo(versosAmb, simbolo) {
+  const versosConSimbolo = [];
+  const composicionSimbolo = [];
+
+  versosAmb.forEach(verso => {
+    const palabras = verso.split(' ');
+    palabras.forEach(palabra => {
+      if (palabra.includes(simbolo)) {
+        versosConSimbolo.push(palabra);
+      }
+    });
+  });
+
+  versosAmb.forEach(verso => {
+    const palabras = verso.split(' ');
+    palabras.forEach((palabra, pos) => {
+      versosConSimbolo.forEach(palabraSimbolo => {
+        if (palabra === palabraSimbolo.replace(simbolo, '')) {
+          const nuevoVerso = [...palabras];
+          nuevoVerso[pos] = palabraSimbolo;
+          composicionSimbolo.push(nuevoVerso.join(' '));
         }
-    }
-    return palabra;
+      });
+    });
+  });
+
+  return composicionSimbolo;
 }
 
-// Función para combinar versos con un símbolo específico
-function combinarConSimbolo(versosAmb, sepVAmb, simbolo) {
-    const palabrasConSimbolo = [];
-    const composicionSimbolo = [];
+/**
+ * Combina las ambigüedades en versos para generar versiones alternativas.
+ * @param {string[]} versosAmb 
+ * @param {boolean} incluirHiatos 
+ * @param {boolean} incluirAtonas 
+ * @param {boolean} incluirDiptongos 
+ * @returns {string[]} Array extendido de versos con ambigüedades.
+ */
+function combinarAmbiguedades(versosAmb, incluirHiatos = false, incluirAtonas = false, incluirDiptongos = false) {
+  const composicionSinalefas = [];
+  const composicionHiatos = [];
+  const composicionDiptongos = [];
+  const composicionAtonas = [];
+  let versosCombinados = [...versosAmb];
 
-    versosAmb.forEach(vPadre => {
-        const palabras = vPadre.split(' ');
-        palabras.forEach(palabra => {
-            if (palabra.includes(simbolo)) {
-                palabrasConSimbolo.push(palabra);
-            }
-        });
+  // Composición de sinalefas
+  versosAmb.forEach(versoPadre => {
+    const palabrasPadre = versoPadre.split(' ');
+    versosAmb.forEach(versoHijo => {
+      if (versoPadre !== versoHijo) {
+        if (palabrasPadre.includes('')) {
+          let desplazamiento = 0;
+          const iEspacio = palabrasPadre.indexOf('');
+          if (
+            versoHijo.split(' ').includes('') &&
+            versoHijo.split(' ').indexOf('') < iEspacio
+          ) {
+            desplazamiento = 2;
+          }
+          const nuevoVerso = [...versoHijo.split(' ')];
+          nuevoVerso.splice(iEspacio + desplazamiento, 0, '', '');
+          composicionSinalefas.push(nuevoVerso.join(' '));
+        }
+      }
     });
+  });
 
-    sepVAmb.forEach(vPadre => {
-        const palabras = vPadre.split(' ');
-        palabras.forEach((palabra, pos) => {
-            palabrasConSimbolo.forEach(palabraSimbolo => {
-                if (palabra === palabraSimbolo.replace(simbolo, '')) {
-                    const vAmbCompuesto = [...palabras];
-                    vAmbCompuesto[pos] = palabraSimbolo;
-                    composicionSimbolo.push(vAmbCompuesto.join(' '));
-                }
-            });
+  versosCombinados = versosCombinados.concat(composicionSinalefas);
+
+  // Composición de atonas
+  if (incluirAtonas) {
+    const keysAtonas = Object.keys(atonasAVecesAcentuadas);
+    versosCombinados.forEach(versoPadre => {
+      const palabras = versoPadre.split(' ');
+      palabras.forEach((palabra, pos) => {
+        keysAtonas.forEach(aton => {
+          if (palabra === aton) {
+            const nuevoVerso = [...palabras];
+            nuevoVerso[pos] = atonasAVecesAcentuadas[aton];
+            composicionAtonas.push(nuevoVerso.join(' '));
+          }
         });
+      });
     });
+    versosCombinados = versosCombinados.concat(composicionAtonas);
+  }
 
-    return composicionSimbolo;
+  // Composición de diptongos
+  if (incluirDiptongos) {
+    const compDiptongos = combinarConSimbolo(versosAmb, '#');
+    versosCombinados = versosCombinados.concat(compDiptongos);
+  }
+
+  // Composición de hiatos
+  if (incluirHiatos) {
+    const compHiatos = combinarConSimbolo(versosAmb, '~');
+    versosCombinados = versosCombinados.concat(compHiatos);
+  }
+
+  return versosCombinados;
 }
 
-// Función para combinar ambigüedades en versos
-function combinarAmbiguedades(versosAmb, hacerComposicionHiatos = false, hacerComposicionAtonas = false, hacerComposicionDiptongos = false) {
-    const composicionAmbSinalefas = [];
-    const composicionHiatos = [];
-    const composicionDiptongos = [];
-    const composicionAtonas = [];
-    let sepVAmb = [...versosAmb];
 
-    // Composición de sinalefas
-    versosAmb.forEach(vPadre => {
-        const padrePalabras = vPadre.split(' ');
-        versosAmb.forEach(vHijo => {
-            if (vPadre !== vHijo) {
-                if (padrePalabras.includes('')) {
-                    let desplazamiento = 0;
-                    const iEspacio = padrePalabras.indexOf('');
-                    if (vHijo.split(' ').includes('') && vHijo.split(' ').indexOf('') < iEspacio) {
-                        desplazamiento = 2;
-                    }
-                    const nuevoVAmb = [...vHijo.split(' ')];
-                    nuevoVAmb.splice(iEspacio + desplazamiento, 0, '', '');
-                    composicionAmbSinalefas.push(nuevoVAmb.join(' '));
-                }
-            }
-        });
+/**
+ * Módulo de análisis métrico de poemas en español
+ * 
+ * ...
+ */
+
+"use strict";
+
+// ==============================
+// Configuración y Datos Estáticos
+// ==============================
+const RECURSO_PRIORIDAD = {
+    [RECURSOS_METRICOS.SINALEFA]: 1,
+    [RECURSOS_METRICOS.DIALEFA]: 1,
+    [RECURSOS_METRICOS.SINERESIS]: 2,
+    [RECURSOS_METRICOS.DIERESIS]: 4
+  };
+  
+  /**
+   * Calcula la “suma de prioridades” de los recursos de un verso,
+   * y también el número total de recursos.
+   * @param {object[]} recursos 
+   * @returns {{resourceCount: number, sumPriority: number}}
+   */
+  function calcularDatosRecursos(recursos) {
+    let resourceCount = recursos.length;
+    let sumPriority = 0;
+    recursos.forEach(r => {
+      // Si no está definido en RECURSO_PRIORIDAD, lo consideramos 0
+      sumPriority += RECURSO_PRIORIDAD[r.tipo] || 0;
     });
+    return { resourceCount, sumPriority };
+  }
+  
 
-    sepVAmb = [...sepVAmb, ...composicionAmbSinalefas];
-
-    // Composición de atonas
-    if (hacerComposicionAtonas) {
-        const atonasAVecesAcentuadasKeys = Object.keys(atonasAVecesAcentuadas);
-        sepVAmb.forEach(vPadre => {
-            const padrePalabras = vPadre.split(' ');
-            padrePalabras.forEach((palabra, pos) => {
-                atonasAVecesAcentuadasKeys.forEach(aton => {
-                    if (palabra === aton) {
-                        const vAmbCompuesto = [...padrePalabras];
-                        vAmbCompuesto[pos] = atonasAVecesAcentuadas[aton];
-                        composicionAtonas.push(vAmbCompuesto.join(' '));
-                    }
-                });
-            });
-        });
-        sepVAmb = [...sepVAmb, ...composicionAtonas];
-    }
-
-    // Composición de diptongos
-    if (hacerComposicionDiptongos) {
-        const compDiptongos = combinarConSimbolo(versosAmb, sepVAmb, '#');
-        sepVAmb = [...sepVAmb, ...compDiptongos];
-    }
-
-    // Composición de hiatos
-    if (hacerComposicionHiatos) {
-        const compHiatos = combinarConSimbolo(versosAmb, sepVAmb, '~');
-        sepVAmb = [...sepVAmb, ...compHiatos];
-    }
-
-    return [...versosAmb, ...composicionAmbSinalefas, ...composicionHiatos, ...composicionDiptongos];
-}
-
-// Función para resolver ambiguedades en versos
-function resolverAmbiguedades(vFinal, versosAmb, arte, detectarAmb) {
-    let vAmbRatioMejor = 0;
+/**
+ * Resuelve ambigüedades en el verso, eligiendo la versión con mejor ratio,
+ * MENOS recursos, y menor prioridad (orden jerárquico).
+ * @param {object} versoAnalizado Objeto con el análisis del verso.
+ * @param {string[]} versosAmb Array de versos con ambigüedades.
+ * @param {number} arte 
+ * @param {number} detectarAmb 
+ * @returns {object} Objeto actualizado del verso analizado.
+ */
+function resolverAmbiguedades(versoAnalizado, versosAmb, arte, detectarAmb) {
     const versosAmbCombinados = combinarAmbiguedades(versosAmb);
-
-    // Clonar los recursos métricos para cada ambigüedad
-    const recursosMetricosOriginal = vFinal[4] || [];
-    let recursosMetricosMejor = [...recursosMetricosOriginal];
-
-    versosAmbCombinados.forEach(vAmb => {
-        const resultado = versoSilabasAcentosTipo(vAmb, arte, detectarAmb);
-        const [_, vAmbSilabas, vAmbAcentos, __, recursosMetricos] = resultado;
-        if (vAmbSilabas === detectarAmb) {
-            const clasificacion = clasificar(vAmbSilabas, vAmbAcentos);
-            const vAmbRatio = clasificacion[2];
-            if (vAmbRatioMejor <= vAmbRatio) {
-                if (vAmbRatioMejor === vAmbRatio && (vAmb.includes('~') || vAmb.includes('#'))) {
-                    return;
-                }
-                vAmbRatioMejor = vAmbRatio;
-                recursosMetricosMejor = recursosMetricos;
-                vFinal = [vAmb, vAmbSilabas, vAmbAcentos, clasificacion, recursosMetricos];
-            }
-        }
+  
+    // *** NUEVO *** Array para guardar TODAS las versiones con sus datos
+    const versiones = [];
+  
+    versosAmbCombinados.forEach(versoAmb => {
+      const analisisAmb = analizarVerso(versoAmb, arte, detectarAmb);
+      // Solo consideramos las que dan las sílabas pedidas
+      if (analisisAmb.silabas === detectarAmb) {
+        const clasificacionAmb = clasificarVerso(analisisAmb.silabas, analisisAmb.acentos);
+        const ratioAmb = clasificacionAmb.ratio;
+        
+        // *** NUEVO *** Calculamos cuántos recursos y qué prioridad total se usan
+        const { resourceCount, sumPriority } = calcularDatosRecursos(analisisAmb.recursosMetricos);
+  
+        versiones.push({
+          analisis: analisisAmb,
+          ratio: ratioAmb,
+          resourceCount,
+          sumPriority
+        });
+      }
     });
+  
+    if (versiones.length === 0) {
+      // No hay versiones que cumplan con detectarAmb
+      return versoAnalizado;
+    }
+  
+    // *** NUEVO *** Orden multi-criterio:
+    // 1) ratio DESC
+    // 2) resourceCount ASC (menos recursos es mejor)
+    // 3) sumPriority ASC (preferir recursos “más naturales”)
+    versiones.sort((a, b) => {
+      // 1) ratio descendente
+      if (b.ratio !== a.ratio) {
+        return b.ratio - a.ratio;
+      }
+      // 2) resourceCount asc
+      if (a.resourceCount !== b.resourceCount) {
+        return a.resourceCount - b.resourceCount;
+      }
+      // 3) sumPriority asc
+      return a.sumPriority - b.sumPriority;
+    });
+    
 
-    vFinal[4] = recursosMetricosMejor;
-    return vFinal;
-}
+    console.log(versiones)
+    // La primera es la "mejor"
+    const mejor = versiones[0].analisis;
+  
+    // Copiamos sus datos en versoAnalizado
+    versoAnalizado.versoProcesado = mejor.versoProcesado;
+    versoAnalizado.silabas = mejor.silabas;
+    versoAnalizado.acentos = mejor.acentos;
+    versoAnalizado.clasificacion = mejor.clasificacion;
+    versoAnalizado.recursosMetricos = mejor.recursosMetricos;
+  
+    // Re-analizamos sin ambigüedades para limpiar duplicados
+    if (versoAnalizado.versoProcesado && versoAnalizado.versoProcesado !== versoAnalizado.versoOriginal) {
+      const analisisFinal = analizarVerso(versoAnalizado.versoProcesado, 0, 0);
+      versoAnalizado.silabas = analisisFinal.silabas;
+      versoAnalizado.acentos = analisisFinal.acentos;
+      versoAnalizado.clasificacion = analisisFinal.clasificacion;
+      versoAnalizado.recursosMetricos = analisisFinal.recursosMetricos;
+    }
+  
+    return versoAnalizado;
+  }
+  
+  
+
+// ==============================
+// Análisis de Verso
+// ==============================
+
+
+function limpiarRecursosConflicto(recursos, numSilabas) {
+    // Copiamos el array para manipularlo
+    let filtrado = [...recursos];
+  
+    // 1) Si el verso quedó en 10 sílabas => se aplicó la sinalefa
+    //    => eliminamos la dialefa que afecte a las mismas palabras.
+    if (numSilabas === 10) {
+      filtrado = filtrado.filter((r, i, arr) => {
+        // Eliminamos dialefa si existe una sinalefa para las mismas palabras
+        if (r.tipo === RECURSOS_METRICOS.DIALEFA) {
+          // Buscamos si hay sinalefa con la misma "entre"
+          const haySinalefaIgual = arr.some(
+            (rr) => rr.tipo === RECURSOS_METRICOS.SINALEFA && rr.entre === r.entre
+          );
+          return !haySinalefaIgual; // si hay sinalefa, quitamos la dialefa
+        }
+        return true;
+      });
+    }
+  
+    // 2) Si el verso quedó en 11 => se aplicó la dialefa
+    //    => eliminamos la sinalefa que afecte a las mismas palabras
+    else if (numSilabas === 11) {
+      filtrado = filtrado.filter((r, i, arr) => {
+        if (r.tipo === RECURSOS_METRICOS.SINALEFA) {
+          // Buscamos si hay dialefa con la misma "entre"
+          const hayDialefaIgual = arr.some(
+            (rr) => rr.tipo === RECURSOS_METRICOS.DIALEFA && rr.entre === r.entre
+          );
+          return !hayDialefaIgual; 
+        }
+        return true;
+      });
+    }
+  
+    // 3) Ejemplo de sinéresis vs diéresis (si quisieras filtrar):
+    //    Si realmente no se aplicó sinéresis, quitas la sinéresis, etc.
+    //    Esto es más complejo de saber en automático. 
+    //    Podrías usar la misma lógica de "entre" o "palabra" para no duplicar.
+  
+    return filtrado;
+  }
+  
 
 /**
- * MÓDULO DE ANÁLISIS DE VERSO
+ * Analiza un verso, calculando sus sílabas, acentos, recursos métricos y clasificación.
+ * @param {string} verso 
+ * @param {number} arte - Total de sílabas (para hemistiquios)
+ * @param {number} detectarAmb - Número de sílabas para detectar ambigüedades
+ * @returns {object} Objeto con el análisis del verso.
  */
+function analizarVerso(verso, arte = 0, detectarAmb = 0) {
+  let numSilabas = 0;
+  const versoLimpio = quitarPuntuacion(verso.toLowerCase()).trim();
+  const palabras = versoLimpio.split(' ');
+  const acentos = [];
+  const versosAmbiguos = [];
+  const recursosMetricos = [];
 
-// Función para verificar si un verso está en hemistiquio
-function enHemistiquio(numSilabas, factor, arte) {
-    const hemistiquio = arte / 2;
-    if (factor === FACTOR_ESDRUJULA) {
-        return numSilabas + factor === Math.floor(hemistiquio);
-    } else {
-        return numSilabas + factor === Math.ceil(hemistiquio);
-    }
-}
+  // --- Recorremos cada palabra (incluyendo posibles tokens vacíos) ---
+  for (let i = 0; i < palabras.length; i++) {
+    const palabra = palabras[i];
+    const palabraAnterior = i > 0 ? palabras[i - 1] : null;
+    const palabraSiguiente = i < palabras.length - 1 ? palabras[i + 1] : null;
 
-// Función principal para analizar un verso
-function versoSilabasAcentosTipo(verso, arte = 0, detectarAmb = 0) {
-    let numSilabas = 0;
-    const versoOp = quitarPuntuacion(verso.toLowerCase()).trim().split(' ');
-    const acentos = [];
-    const versosAmb = [];
-    const palabraFinal = versoOp[versoOp.length - 1];
-    
-    // Arreglo para almacenar los recursos métricos
-    const recursosMetricos = [];
-
-    versoOp.forEach((palabra, i) => {
-        if (palabra) {
-            const [silabas, acento, factor] = palabraSilabasAcentos(palabra);
-            const palabraSiguiente = i < versoOp.length - 1 ? versoOp[i + 1] : null;
-
-            numSilabas += silabas;
-
-            // Cálculo de los adverbios en -mente (dos acentos)
-            if (palabra.endsWith('mente') && palabra.length > 5) {
-                const palabraSinMente = palabra.replace('mente', '');
-                const silabasMente = 2;
-                const acentoMente = 1;
-                const [silabasSinMente, acentoSinMente, factorSinMente] = palabraSilabasAcentos(palabraSinMente);
-                const nuevoAcentoSinMente = numSilabas - (silabasSinMente - acentoSinMente) - silabasMente;
-                acentos.push(acentoSinMente);
-                acentos.push(numSilabas - (silabasMente - acentoMente));
-            } else {
-                // Cálculo del acento para el resto de palabras (un acento)
-                if (!atonas.includes(palabra) || i === versoOp.length - 1) {
-                    const acentoNuevo = numSilabas - (silabas - acento);
-                    if (acentos.length > 0) {
-                        if (acentos[acentos.length - 1] !== acentoNuevo) {
-                            acentos.push(acentoNuevo);
-                        }
-                    } else {
-                        acentos.push(acentoNuevo);
-                    }
-                }
-            }
-
-            // Sinalefas
-            if (
-                palabraSiguiente &&
-                terminaPorVocal(palabra) &&
-                empiezaPorVocal(palabraSiguiente) &&
-                !enHemistiquio(numSilabas, factor, arte) &&
-                !yeye(palabraSiguiente)
-            ) {
-                numSilabas -= 1;
-
-                // Registrar sinalefa con las palabras exactas
-                const palabraActual = versoOp[i];
-                const palabraSig = versoOp[i + 1];
-                recursosMetricos.push({
-                    tipo: 'Sinalefa',
-                    entre: `${palabraActual} y ${palabraSig}`
-                });
-
-                // Anotar dialefa
-                if (detectarAmb > 0) {
-                    const vAmb = [...versoOp];
-                    vAmb.splice(i + 1, 0, ' ');
-                    versosAmb.push(vAmb.join(' '));
-
-                    // Registrar dialefa con las palabras exactas
-                    recursosMetricos.push({
-                        tipo: 'Dialefa',
-                        entre: `${palabraActual} y ${palabraSig}`
-                    });
-                }
-            }
-
-            // Dieresis y Sineresis
-            if (detectarAmb > 0) {
-                // Anotar sineresis
-                if (hayHiato(palabra)) {
-                    const vAmb = [...versoOp];
-                    vAmb.splice(i, 1, quitarHiato(palabra));
-                    versosAmb.push(vAmb.join(' '));
-
-                    // Registrar sineresis
-                    recursosMetricos.push({
-                        tipo: 'Sineresis',
-                        palabra: palabra
-                    });
-                }
-                // Anotar dieresis
-                if (hayDiptongo(palabra)) {
-                    const vAmb = [...versoOp];
-                    vAmb.splice(i, 1, separarDiptongo(palabra));
-                    versosAmb.push(vAmb.join(' '));
-
-                    // Registrar diéresis
-                    recursosMetricos.push({
-                        tipo: 'Diéresis',
-                        palabra: palabra
-                    });
-                }
-            }
-
-            // Hemistiquios
-            if (arte > 0 && !atonas.includes(palabra) && enHemistiquio(numSilabas, factor, arte)) {
-                numSilabas += factor;
-            }
+    // 1) Si la “palabra” es un token vacío (""), interpretamos que
+    //    estamos forzando un hiato (Dialefa) entre palabraAnterior y palabraSiguiente.
+    if (!palabra) {
+      if (palabraAnterior && palabraSiguiente) {
+        // Verificamos si realmente es un hiato
+        if (terminaPorVocal(palabraAnterior) && empiezaPorVocal(palabraSiguiente)) {
+          // Registramos Dialefa como recurso
+          recursosMetricos.push({
+            tipo: RECURSOS_METRICOS.DIALEFA,
+            entre: `${palabraAnterior} - ${palabraSiguiente}`
+          });
+          // Ojo a la cuenta de sílabas: si normalmente
+          // la sinalefa hubiera restado 1, aquí NO restamos nada,
+          // con lo cual quedamos con +1 sílaba respecto a la versión con sinalefa.
+          // Dependiendo de tu lógica de conteo, ajusta si necesitas.
         }
-    });
-
-    const factorPalabraFinal = palabraFinal.endsWith('mente') ? 0 : palabraSilabasAcentos(palabraFinal)[2];
-    numSilabas += factorPalabraFinal;
-
-    // Si es mayor de once, se vuelve a contar teniendo en cuenta el hemistiquio (llamada recursiva)
-    if (numSilabas > 11 && arte === 0) {
-        const resultado = versoSilabasAcentosTipo(verso, numSilabas, 0);
-        numSilabas = resultado[1];
-        acentos.length = 0;
-        resultado[2].forEach(ac => acentos.push(ac));
+      }
+      // No hacemos más con un token vacío
+      continue;
     }
 
-    let vFinal = [verso, numSilabas, acentos, clasificar(numSilabas, acentos)];
+    // 2) Palabra normal: la analizamos
+    const analisisPalabra = analizarPalabra(palabra);
+    numSilabas += analisisPalabra.silabas;
 
-    // Módulo detección de ambigüedades
+    // Acento (caso especial adverbios "-mente")
+    if (palabra.endsWith('mente') && palabra.length > 5) {
+      const sinMente = palabra.replace('mente', '');
+      const silabasSinMente = analizarPalabra(sinMente).silabas;
+
+      // Primer acento: parte previa a "mente"
+      acentos.push(
+        numSilabas - 2 - (silabasSinMente - analizarPalabra(sinMente).acento)
+      );
+      // Segundo acento: la sílaba del "mente" (penúltima)
+      acentos.push(numSilabas - 1);
+
+    } else {
+      // Acento normal, salvo que sea palabra átona y no sea la última
+      if (!atonas.includes(palabra) || i === palabras.length - 1) {
+        const acentoNuevo = numSilabas
+          - (analisisPalabra.silabas - analizarPalabra(palabra).acento);
+        if (acentos.length === 0 || acentos[acentos.length - 1] !== acentoNuevo) {
+          acentos.push(acentoNuevo);
+        }
+      }
+    }
+
+    // 3) Sinalefa: si la palabra termina en vocal y la siguiente empieza en vocal
+    if (
+      palabraSiguiente &&
+      terminaPorVocal(palabra) &&
+      empiezaPorVocal(palabraSiguiente) &&
+      !esYVocalica(palabraSiguiente)
+    ) {
+      // Restamos 1 sílaba e indicamos recurso Sinalefa
+      numSilabas -= 1;
+      recursosMetricos.push({
+        tipo: RECURSOS_METRICOS.SINALEFA,
+        entre: `${palabra} - ${palabraSiguiente}`
+      });
+
+      // Verso alternativo con Dialefa (no se mete en recursos base)
+      if (detectarAmb > 0) {
+        const versAmb = [...palabras];
+        // Insertamos un token vacío para forzar hiato
+        versAmb.splice(i + 1, 0, '');
+        versosAmbiguos.push(versAmb.join(' '));
+      }
+    }
+
+    // 4) Ambigüedades Sineresis / Diéresis: creamos solo la versión alternativa
     if (detectarAmb > 0) {
-        vFinal = resolverAmbiguedades(vFinal, versosAmb, arte, detectarAmb);
+      // Hiato => alternativa con Sinéresis
+      if (hayHiato(palabra)) {
+        const versAmb = [...palabras];
+        versAmb[i] = quitarHiato(palabra);  // reemplazamos la palabra
+        versosAmbiguos.push(versAmb.join(' '));
+      }
+      // Diptongo => alternativa con Diéresis
+      if (hayDiptongo(palabra)) {
+        const versAmb = [...palabras];
+        versAmb[i] = separarDiptongo(palabra);  // reemplazamos la palabra
+        versosAmbiguos.push(versAmb.join(' '));
+      }
     }
 
-    // Añadir los recursos métricos al resultado final
-    vFinal.push(recursosMetricos);
-
-    return vFinal;
-}
-
-/**
- * MÓDULO DE ANÁLISIS DE POEMAS ENTEROS
- */
-
-// Función para obtener los elementos más frecuentes de una lista por encima de una constante
-function mostFrequent(lista, constante = 0.15) {
-    const tablaFrecuencias = {};
-    lista.forEach(item => {
-        tablaFrecuencias[item] = (tablaFrecuencias[item] || 0) + 1;
-    });
-
-    // Convertir las frecuencias a proporciones
-    Object.keys(tablaFrecuencias).forEach(item => {
-        tablaFrecuencias[item] /= lista.length;
-    });
-
-    // Filtrar por la constante y ordenar
-    const filtrado = Object.entries(tablaFrecuencias)
-        .filter(([_, freq]) => freq >= constante)
-        .sort((a, b) => b[1] - a[1]);
-
-    return Object.fromEntries(filtrado);
-}
-
-// Función para trocear una columna de una tabla
-function trocearColumna(x, c, i, contexto) {
-    let rodaja;
-    if (i < contexto) {
-        rodaja = x.slice(0, contexto);
-    } else if (i + contexto >= x.length) {
-        rodaja = x.slice(i);
-    } else {
-        rodaja = x.slice(i - contexto, i + contexto);
+    // 5) Hemistiquio (si arte > 0)
+    if (
+      arte > 0 &&
+      !atonas.includes(palabra) &&
+      (numSilabas + analisisPalabra.factor === Math.ceil(arte / 2)
+       || numSilabas + analisisPalabra.factor === Math.floor(arte / 2))
+    ) {
+      numSilabas += analisisPalabra.factor;
     }
-    return rodaja.map(verso => verso[c]);
+  } // fin del for
+
+  // Palabra final para ajuste de aguda/llana/esdrújula
+  const palabraFinal = palabras[palabras.length - 1] || '';
+  const factorFinal = (palabraFinal.endsWith('mente'))
+    ? 0
+    : analizarPalabra(palabraFinal).factor;
+  numSilabas += factorFinal;
+
+  // Corrección especial endecasílabo: si 10 sílabas y acento en 5ª
+  if (numSilabas === 10 && acentos.includes(5)) {
+    const idxUltimaSinalefa = recursosMetricos
+      .map(r => r.tipo)
+      .lastIndexOf(RECURSOS_METRICOS.SINALEFA);
+    if (idxUltimaSinalefa !== -1) {
+      const ultimaSinalefa = recursosMetricos[idxUltimaSinalefa];
+      // Eliminamos esa sinalefa
+      recursosMetricos.splice(idxUltimaSinalefa, 1);
+      // Insertamos dialefa
+      recursosMetricos.push({
+        tipo: RECURSOS_METRICOS.DIALEFA,
+        entre: ultimaSinalefa.entre
+      });
+    }
+    numSilabas++;
+    // Desplazamos acentos >= 5
+    for (let i = 0; i < acentos.length; i++) {
+      if (acentos[i] >= 5) {
+        acentos[i]++;
+      }
+    }
+  }
+
+  // Reanálisis si excede 11 sílabas sin arte
+  if (numSilabas > 11 && arte === 0) {
+    const reanalisis = analizarVerso(verso, numSilabas, 0);
+    numSilabas = reanalisis.silabas;
+    acentos.length = 0;
+    reanalisis.acentos.forEach(a => acentos.push(a));
+  }
+
+  // Clasificación final
+  const clasificacion = clasificarVerso(numSilabas, acentos);
+
+  // Construimos el resultado
+  let resultado = {
+    versoOriginal: verso,
+    versoProcesado: verso,
+    silabas: numSilabas,
+    acentos,
+    clasificacion,
+    recursosMetricos
+  };
+
+  // Resolver ambigüedades si hay detectAmb
+  if (detectarAmb > 0) {
+    resultado = resolverAmbiguedades(resultado, versosAmbiguos, arte, detectarAmb);
+  }
+
+  // Limpieza de conflictos (no mezclar sinalefa y dialefa sobre las mismas palabras, etc.)
+  resultado.recursosMetricos = limpiarRecursosConflicto(
+    resultado.recursosMetricos,
+    resultado.silabas
+  );
+
+  return resultado;
 }
 
-// Función para escanear una lista de versos y analizar su métrica
-function escandirListaVersos(versos, contexto = 14) {
-    const x = [];
-    const nuevo = [];
 
-    // Cálculo con módulo de ambigüedades desactivado
-    versos.forEach(versoA => {
-        const v = versoA.trim().replace(/\n/g, '');
-        if (!v) return;
-        const resultado = versoSilabasAcentosTipo(versoA, 0, 0);
-        const [vFinal, silabasV, acentosV, clasificacionV, recursosMetricos] = resultado;
-        const [tipoV, acentosIdealesV, ratioV] = clasificacionV;
-        x.push([v, vFinal, silabasV, acentosV, acentosIdealesV, tipoV, ratioV, recursosMetricos]);
-    });
 
-    // Cálculo de versos frecuentes
-    const columnaSilabasV = x.map(dato => dato[2]);
-    let versosFrecuentes = mostFrequent(columnaSilabasV);
-    const metricaMixta = Object.keys(versosFrecuentes).length > 1;
-
-    // Cálculo de versos ambiguos
-    x.forEach((datoV, i) => {
-        const silabasV = datoV[2];
-        let desambiguado = false;
-
-        // Si es métrica mixta, se calculan las medidas frecuentes en un contexto n
-        let versosFrecuentesLocal = versosFrecuentes;
-        if (metricaMixta) {
-            const columnaLocal = trocearColumna(x, 2, i, contexto);
-            versosFrecuentesLocal = mostFrequent(columnaLocal);
-        }
-
-        // Aproximar a los versos más frecuentes
-        if (!versosFrecuentesLocal[silabasV]) {
-            const resultado = versoSilabasAcentosTipo(datoV[0], 0, silabasV);
-            const [vFinal, silabasVNew, acentosVNew, clasificacionVNew, recursosMetricosNew] = resultado;
-            const [tipoV, acentosIdealesV, ratioV] = clasificacionVNew;
-            if (silabasVNew === silabasV) {
-                nuevo.push([datoV[0], vFinal, silabasVNew, acentosVNew, acentosIdealesV, tipoV, ratioV, recursosMetricosNew]);
-                desambiguado = true;
-            }
-        }
-
-        if (!desambiguado) {
-            nuevo.push(datoV);
-        }
-    });
-
-    return nuevo;
-}
-
-// Función para escanear un texto completo (poema) y analizar su métrica
-function escandirTexto(texto) {
-    const versos = texto.split('\n');
-    return escandirListaVersos(versos);
-}
+// ==============================
+// Análisis de Poemas
+// ==============================
 
 /**
- * Función para resaltar recursos métricos en el verso
+ * Calcula los elementos más frecuentes en una lista (por encima de un umbral).
+ * @param {any[]} lista 
+ * @param {number} umbral 
+ * @returns {object}
  */
-function resaltarRecursos(original, recursosMetricos) {
-    // Dividir el verso en palabras
-    const palabras = original.split(' ');
-    
-    // Clonar el arreglo para manipularlo
-    let palabrasResaltadas = [...palabras];
-    
-    // Procesar cada recurso métrico y aplicar resaltados
-    recursosMetricos.forEach(recurso => {
-        if (recurso.tipo === 'Sinalefa') {
-            // Sinalefa entre dos palabras: resaltar ambas palabras
-            const entrePalabras = recurso.entre.split(' y ');
-            if (entrePalabras.length === 2) {
-                const palabra1 = entrePalabras[0];
-                const palabra2 = entrePalabras[1];
-                const idx1 = palabrasResaltadas.indexOf(palabra1);
-                const idx2 = palabrasResaltadas.indexOf(palabra2, idx1 + 1);
-                if (idx1 !== -1 && idx2 !== -1) {
-                    palabrasResaltadas[idx1] = `<span class="sinalefa">${palabrasResaltadas[idx1]}</span>`;
-                    palabrasResaltadas[idx2] = `<span class="sinalefa">${palabrasResaltadas[idx2]}</span>`;
-                }
-            }
-        } else if (recurso.tipo === 'Sineresis') {
-            // Sineresis en una palabra: resaltar la palabra
-            const palabra = recurso.palabra;
-            const idx = palabrasResaltadas.indexOf(palabra);
-            if (idx !== -1) {
-                palabrasResaltadas[idx] = `<span class="sineresis">${palabrasResaltadas[idx]}</span>`;
-            }
-        } else if (recurso.tipo === 'Diéresis') {
-            // Diéresis en una palabra: resaltar la palabra
-            const palabra = recurso.palabra;
-            const idx = palabrasResaltadas.indexOf(palabra);
-            if (idx !== -1) {
-                palabrasResaltadas[idx] = `<span class="dieresis">${palabrasResaltadas[idx]}</span>`;
-            }
-        } else if (recurso.tipo === 'Dialefa') {
-            // Dialefa entre dos palabras: resaltar ambas palabras
-            const entrePalabras = recurso.entre.split(' y ');
-            if (entrePalabras.length === 2) {
-                const palabra1 = entrePalabras[0];
-                const palabra2 = entrePalabras[1];
-                const idx1 = palabrasResaltadas.indexOf(palabra1);
-                const idx2 = palabrasResaltadas.indexOf(palabra2, idx1 + 1);
-                if (idx1 !== -1 && idx2 !== -1) {
-                    palabrasResaltadas[idx1] = `<span class="dialefa">${palabrasResaltadas[idx1]}</span>`;
-                    palabrasResaltadas[idx2] = `<span class="dialefa">${palabrasResaltadas[idx2]}</span>`;
-                }
-            }
-        }
-        // Puedes añadir más condiciones para otros tipos de recursos métricos
-    });
-    
-    // Reconstruir el verso con las palabras resaltadas
-    return palabrasResaltadas.join(' ');
+function mostFrequent(lista, umbral = 0.15) {
+  const frecuencias = {};
+  lista.forEach(item => {
+    frecuencias[item] = (frecuencias[item] || 0) + 1;
+  });
+  Object.keys(frecuencias).forEach(item => {
+    frecuencias[item] /= lista.length;
+  });
+  const filtrado = Object.entries(frecuencias)
+    .filter(([_, freq]) => freq >= umbral)
+    .sort((a, b) => b[1] - a[1]);
+  return Object.fromEntries(filtrado);
 }
 
 /**
- * Función para mostrar el análisis de manera legible en la página
+ * Trocea una columna de una matriz en un contexto dado.
+ * @param {any[][]} matriz 
+ * @param {number} columna 
+ * @param {number} indice 
+ * @param {number} contexto 
+ * @returns {any[]}
+ */
+function trocearColumna(matriz, columna, indice, contexto) {
+  let rodaja;
+  if (indice < contexto) {
+    rodaja = matriz.slice(0, contexto);
+  } else if (indice + contexto >= matriz.length) {
+    rodaja = matriz.slice(indice);
+  } else {
+    rodaja = matriz.slice(indice - contexto, indice + contexto);
+  }
+  return rodaja.map(verso => verso[columna]);
+}
+
+function reanalizarVersoConAmb(versoAnalizado, medida) {
+    // Reanalizamos el verso original forzando “detectarAmb = medida”
+    const analisisAmb = analizarVerso(versoAnalizado.versoOriginal, 0, medida);
+    
+    // ¿Logró la métrica?
+    if (analisisAmb.silabas === medida) {
+      // Comparamos ratio
+      const ratioOriginal = versoAnalizado.clasificacion.ratio;
+      const ratioNuevo = analisisAmb.clasificacion.ratio;
+      // Si el nuevo ratio es >=, nos quedamos con la versión reanalizada
+      if (ratioNuevo >= ratioOriginal) {
+        return analisisAmb;
+      }
+    }
+    // Si no encaja en la métrica o no mejora ratio, devolvemos null
+    return null;
+  }
+  
+
+/**
+ * Escanea una lista de versos y analiza su métrica.
+ * @param {string[]} versos 
+ * @param {number} contexto 
+ * @returns {object[]} Array de objetos con el análisis de cada verso.
+ */
+function escanearListaVersos(versos, contexto = 14) {
+    // 1. Análisis inicial sin forzar ambigüedades
+    const analisisVersos = [];
+    versos.forEach(verso => {
+      const v = verso.trim().replace(/\n/g, '');
+      if (!v) return;
+      const analisis = analizarVerso(v, 0, 0);
+      analisisVersos.push(analisis);
+    });
+  
+    // 2. Detectar la métrica predominante (ej.: 11)
+    const silabasArray = analisisVersos.map(d => d.silabas);
+    const mapaFrecuencias = mostFrequent(silabasArray);
+    const masFrecuente = Object.keys(mapaFrecuencias).reduce((a, b) => {
+      // Nos quedamos con la medida con frecuencia mayor
+      return mapaFrecuencias[a] >= mapaFrecuencias[b] ? a : b;
+    });
+    const metricaPrincipal = parseInt(masFrecuente, 10) || 11;
+  
+    // 3. Reanalizar versos que no encajen en metricaPrincipal
+    for (let i = 0; i < analisisVersos.length; i++) {
+      const versoActual = analisisVersos[i];
+      if (versoActual.silabas !== metricaPrincipal) {
+        // Llamamos a una función que intente "desambiguar" con esa métrica
+        const reanalizado = reanalizarVersoConAmb(versoActual, metricaPrincipal);
+        if (reanalizado) {
+          analisisVersos[i] = reanalizado;
+        }
+      }
+    }
+  
+    return analisisVersos;
+  }  
+
+/**
+ * Escanea un poema completo y analiza cada verso.
+ * @param {string} texto 
+ * @returns {object[]} Array de objetos con el análisis de cada verso.
+ */
+function escanearTexto(texto) {
+  const versos = texto.split('\n');
+  return escanearListaVersos(versos);
+}
+
+// ==============================
+// Funciones de Presentación
+// ==============================
+
+/**
+ * Resalta los recursos métricos en un verso.
+ * @param {string} versoOriginal 
+ * @param {object[]} recursosMetricos 
+ * @returns {string} Verso con recursos resaltados en HTML.
+ */
+function resaltarRecursos(versoOriginal, recursosMetricos) {
+  const palabras = versoOriginal.split(' ');
+  let palabrasResaltadas = [...palabras];
+
+  recursosMetricos.forEach(recurso => {
+    if (recurso.tipo === RECURSOS_METRICOS.SINALEFA) {
+      const partes = recurso.entre.split(' - ');
+      if (partes.length === 2) {
+        const idx1 = palabrasResaltadas.indexOf(partes[0]);
+        const idx2 = palabrasResaltadas.indexOf(partes[1], idx1 + 1);
+        if (idx1 !== -1 && idx2 !== -1) {
+          palabrasResaltadas[idx1] = `<span class="sinalefa">${palabrasResaltadas[idx1]}</span>`;
+          palabrasResaltadas[idx2] = `<span class="sinalefa">${palabrasResaltadas[idx2]}</span>`;
+        }
+      }
+    } else if (recurso.tipo === RECURSOS_METRICOS.SINERESIS) {
+      const idx = palabrasResaltadas.indexOf(recurso.palabra);
+      if (idx !== -1) {
+        palabrasResaltadas[idx] = `<span class="sineresis">${palabrasResaltadas[idx]}</span>`;
+      }
+    } else if (recurso.tipo === RECURSOS_METRICOS.DIERESIS) {
+      const idx = palabrasResaltadas.indexOf(recurso.palabra);
+      if (idx !== -1) {
+        palabrasResaltadas[idx] = `<span class="dieresis">${palabrasResaltadas[idx]}</span>`;
+      }
+    } else if (recurso.tipo === RECURSOS_METRICOS.DIALEFA) {
+      const partes = recurso.entre.split(' - ');
+      if (partes.length === 2) {
+        const idx1 = palabrasResaltadas.indexOf(partes[0]);
+        const idx2 = palabrasResaltadas.indexOf(partes[1], idx1 + 1);
+        if (idx1 !== -1 && idx2 !== -1) {
+          palabrasResaltadas[idx1] = `<span class="dialefa">${palabrasResaltadas[idx1]}</span>`;
+          palabrasResaltadas[idx2] = `<span class="dialefa">${palabrasResaltadas[idx2]}</span>`;
+        }
+      }
+    }
+  });
+
+  return palabrasResaltadas.join(' ');
+}
+
+/**
+ * Muestra el análisis en una tabla HTML.
+ * @param {object[]} analisis Array de objetos con el análisis de cada verso.
  */
 function mostrarAnalisis(analisis) {
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Limpiar resultados anteriores
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
 
-    if (analisis.length === 0) {
-        resultsDiv.innerHTML = '<p>No se encontraron versos para analizar.</p>';
-        document.getElementById('exportButton').disabled = true;
-        return;
-    }
+  if (analisis.length === 0) {
+    resultsDiv.innerHTML = '<p>No se encontraron versos para analizar.</p>';
+    const exportBtn = document.getElementById('exportButton');
+    if (exportBtn) exportBtn.disabled = true;
+    return;
+  }
 
-    const table = document.createElement('table');
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  const headers = [
+    'Número',
+    'Verso',
+    'Sílabas',
+    'Acentos',
+    'Acentos Ideales',
+    'Tipo',
+    'Ratio de Coincidencia (%)',
+    'Recursos Métricos'
+  ];
+  headers.forEach(textoEncabezado => {
+    const th = document.createElement('th');
+    th.textContent = textoEncabezado;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
 
-    // Crear encabezados de la tabla
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    const headers = ['Número', 'Verso', 'Sílabas', 'Acentos', 'Acentos Ideales', 'Tipo', 'Ratio de Coincidencia (%)', 'Recursos Métricos'];
-    headers.forEach(headerText => {
-        const th = document.createElement('th');
-        th.textContent = headerText;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  analisis.forEach((versoAnalisis, index) => {
+    const row = document.createElement('tr');
 
-    // Crear cuerpo de la tabla
-    const tbody = document.createElement('tbody');
-    analisis.forEach((verso, index) => {
-        const [original, etiquetado, silabas, acentos, acentosIdeales, tipo, ratio, recursosMetricos] = verso;
-        const row = document.createElement('tr');
+    const cellNumero = document.createElement('td');
+    cellNumero.textContent = index + 1;
+    row.appendChild(cellNumero);
 
-        const numeroCell = document.createElement('td');
-        numeroCell.textContent = index + 1;
-        row.appendChild(numeroCell);
+    const cellVerso = document.createElement('td');
+    const versoResaltado = resaltarRecursos(versoAnalisis.versoOriginal, versoAnalisis.recursosMetricos);
+    cellVerso.innerHTML = versoResaltado;
+    row.appendChild(cellVerso);
 
-        const originalCell = document.createElement('td');
-        // Resaltar recursos métricos en el verso
-        const versoResaltado = resaltarRecursos(original, recursosMetricos);
-        originalCell.innerHTML = versoResaltado;
-        row.appendChild(originalCell);
+    const cellSilabas = document.createElement('td');
+    cellSilabas.textContent = versoAnalisis.silabas;
+    row.appendChild(cellSilabas);
 
-        const silabasCell = document.createElement('td');
-        silabasCell.textContent = silabas;
-        row.appendChild(silabasCell);
+    const cellAcentos = document.createElement('td');
+    cellAcentos.textContent = `[${versoAnalisis.acentos.join(', ')}]`;
+    row.appendChild(cellAcentos);
 
-        const acentosCell = document.createElement('td');
-        acentosCell.textContent = `[${acentos.join(', ')}]`;
-        row.appendChild(acentosCell);
+    const cellAcentosIdeales = document.createElement('td');
+    const acentosIdealesTexto = Array.isArray(versoAnalisis.clasificacion.acentosIdeales)
+      ? `[${versoAnalisis.clasificacion.acentosIdeales.join(', ')}]`
+      : versoAnalisis.clasificacion.acentosIdeales;
+    cellAcentosIdeales.textContent = acentosIdealesTexto;
+    row.appendChild(cellAcentosIdeales);
 
-        const acentosIdealesCell = document.createElement('td');
-        // Verificar si acentosIdeales es un arreglo
-        const acentosIdealesTexto = Array.isArray(acentosIdeales) ? `[${acentosIdeales.join(', ')}]` : acentosIdeales;
-        acentosIdealesCell.textContent = acentosIdealesTexto;
-        row.appendChild(acentosIdealesCell);
+    const cellTipo = document.createElement('td');
+    cellTipo.textContent = versoAnalisis.clasificacion.nombre;
+    row.appendChild(cellTipo);
 
-        const tipoCell = document.createElement('td');
-        tipoCell.textContent = tipo;
-        row.appendChild(tipoCell);
+    const cellRatio = document.createElement('td');
+    cellRatio.textContent = (versoAnalisis.clasificacion.ratio * 100).toFixed(2);
+    row.appendChild(cellRatio);
 
-        const ratioCell = document.createElement('td');
-        ratioCell.textContent = (ratio * 100).toFixed(2);
-        row.appendChild(ratioCell);
-
-        // Columna para Recursos Métricos
-        const recursosCell = document.createElement('td');
-        if (recursosMetricos && recursosMetricos.length > 0) {
-            recursosMetricos.forEach(recurso => {
-                if (recurso.tipo === 'Sinalefa') {
-                    recursosCell.innerHTML += `<strong>Sinalefa:</strong> ${recurso.entre}<br>`;
-                } else if (recurso.tipo === 'Sineresis' || recurso.tipo === 'Diéresis') {
-                    recursosCell.innerHTML += `<strong>${recurso.tipo}:</strong> ${recurso.palabra}<br>`;
-                } else if (recurso.tipo === 'Dialefa') {
-                    recursosCell.innerHTML += `<strong>Dialefa:</strong> ${recurso.entre}<br>`;
-                }
-                // Puedes añadir más tipos de recursos aquí
-            });
-        } else {
-            recursosCell.textContent = 'Ninguno';
+    const cellRecursos = document.createElement('td');
+    if (versoAnalisis.recursosMetricos && versoAnalisis.recursosMetricos.length > 0) {
+      versoAnalisis.recursosMetricos.forEach(recurso => {
+        if (recurso.tipo === RECURSOS_METRICOS.SINALEFA) {
+          cellRecursos.innerHTML += `<strong>Sinalefa:</strong> ${recurso.entre}<br>`;
+        } else if (
+          recurso.tipo === RECURSOS_METRICOS.SINERESIS ||
+          recurso.tipo === RECURSOS_METRICOS.DIERESIS
+        ) {
+          cellRecursos.innerHTML += `<strong>${recurso.tipo}:</strong> ${recurso.palabra}<br>`;
+        } else if (recurso.tipo === RECURSOS_METRICOS.DIALEFA) {
+          cellRecursos.innerHTML += `<strong>Dialefa:</strong> ${recurso.entre}<br>`;
         }
-        row.appendChild(recursosCell);
+      });
+    } else {
+      cellRecursos.textContent = 'Ninguno';
+    }
+    row.appendChild(cellRecursos);
 
-        tbody.appendChild(row);
-    });
-    table.appendChild(tbody);
-    resultsDiv.appendChild(table);
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+  resultsDiv.appendChild(table);
 
-    // Habilitar el botón de exportar
-    document.getElementById('exportButton').disabled = false;
+  const exportBtn = document.getElementById('exportButton');
+  if (exportBtn) exportBtn.disabled = false;
 }
 
-// Event Listener para el botón de análisis
+// ==============================
+// Event Listener para Análisis
+// ==============================
+
 document.getElementById('analyzeButton').addEventListener('click', () => {
-    const texto = document.getElementById('poemInput').value;
-    if (!texto.trim()) {
-        alert('Por favor, introduce un poema para analizar.');
-        return;
-    }
-    const analisis = escandirTexto(texto);
-    mostrarAnalisis(analisis);
+  const texto = document.getElementById('poemInput').value;
+  if (!texto.trim()) {
+    alert('Por favor, introduce un poema para analizar.');
+    return;
+  }
+  const analisis = escanearTexto(texto);
+  mostrarAnalisis(analisis);
 });
