@@ -1,17 +1,16 @@
 // js/tabIndividual.js
 
 import { generarTablaVersos } from './common.js';
+import { renderResumenGlobal, renderResumenAdicional, exportResultados } from './tabResumen.js';
 
-/**
- * Inicializa la pestaña de Análisis Individual.
- * Lee el poema ingresado, lo analiza y muestra los resultados en forma de tabla.
- */
 function initTabIndividual() {
   const poemInput = document.getElementById('poemInput');
   const analyzeButton = document.getElementById('analyzeButton');
   const resultContainer = document.getElementById('resultContainer');
-  
-  // Variable para almacenar resultados (útil para exportar, si fuera necesario)
+  const summaryContainer = document.getElementById('individualSummary');
+  const exportFormatIndividual = document.getElementById('exportFormatIndividual');
+  const exportButtonIndividual = document.getElementById('exportButtonIndividual');
+
   let individualResults = [];
 
   analyzeButton.addEventListener('click', () => {
@@ -21,15 +20,10 @@ function initTabIndividual() {
       return;
     }
 
-    // Llamadas a funciones de análisis:
-    // Se asume que escanearTexto devuelve un array de análisis, uno por verso.
     const metricAnalysis = escanearTexto(poem);
-    // Se asume que SpanishRhymeAnnotator.getRhymeScheme devuelve un objeto con:
-    // scheme (string), details (array) y groups (objeto)
     const rhymeResult = SpanishRhymeAnnotator.getRhymeScheme(poem);
     const schemeArray = rhymeResult.scheme.split('');
     
-    // Se crea un array de resultados que combine la métrica y la rima por línea.
     const results = [];
     const numLines = Math.min(metricAnalysis.length, rhymeResult.details.length);
     for (let i = 0; i < numLines; i++) {
@@ -41,15 +35,27 @@ function initTabIndividual() {
         rhymeFragment = rhymeResult.groups[rhymeLabel].rima;
       }
       
+      let recursosStr = "-";
+      if (analysis.recursosMetricos && analysis.recursosMetricos.length > 0) {
+        recursosStr = analysis.recursosMetricos.map(rec => {
+          let detail = "";
+          if (rec.entre) {
+            detail = " (" + rec.entre + ")";
+          } else if (rec.palabra) {
+            detail = " (" + rec.palabra + ")";
+          }
+          return rec.tipo + detail;
+        }).join(", ");
+      }
+      
       results.push({
-        fileName: "", // En análisis individual no hay fichero asociado
+        fileName: "",
         lineNumber: i + 1,
         versoOriginal: analysis.versoOriginal,
         silabas: analysis.silabas,
         acentos: analysis.acentos,
         clasificacion: analysis.clasificacion.nombre,
-        // Extraemos solo el tipo del recurso para resumir (ejemplo: "Sinalefa")
-        recursos: analysis.recursosMetricos ? analysis.recursosMetricos.map(rec => rec.tipo).join(", ") : "-",
+        recursos: recursosStr,
         rhymeLabel,
         rhymeType,
         rhymeFragment
@@ -57,8 +63,14 @@ function initTabIndividual() {
     }
     
     individualResults = results;
-    // Se genera la tabla utilizando la función común
     resultContainer.innerHTML = generarTablaVersos(results);
+    summaryContainer.innerHTML = renderResumenGlobal(results) + renderResumenAdicional(results);
+  });
+
+  exportButtonIndividual.addEventListener('click', (event) => {
+    event.preventDefault();
+    const format = exportFormatIndividual.value;
+    exportResultados(individualResults, format, 'analisis_individual');
   });
 }
 

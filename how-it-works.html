@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analizador de Métrica y Rimas</title>
+  <!-- CSS Global -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    
+    .cita {
+      font-style: italic;
+      color: #444;
+    }
+    .referencias {
+      margin-top: 2em;
+      padding-top: 1em;
+      border-top: 1px solid #ccc;
+    }
+    h3, h2 {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <!-- Logo de la universidad; ajusta la ruta si es necesario -->
+      <img src="assets/logo_uni.png" alt="Logo Universidad" />
+      <ul>
+        <li><a href="index.html">Analizador de métrica y rima</a></li>
+        <li><a href="how-it-works.html">Cómo funciona</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <!-- Enlaces a redes: ajusta URLs e imágenes -->
+      <a href="https://github.com/grmarco/jumper_web" target="_blank">
+        <img src="https://twenty-icons.com/github.com/64" alt="GitHub" />
+      </a>
+      <a href="https://www.linkedin.com/in/guillermo-marco-remon/" target="_blank">
+        <img src="https://twenty-icons.com/linkedin.com/64/" alt="LinkedIn" />
+      </a>
+      <a href="https://twitter.com/guillermomarco_" target="_blank">
+        <img src="https://twenty-icons.com/x.com/64/" alt="Twitter" />
+      </a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header>
+
+
+
+<h1>Cómo funciona</h1>
+
+<p>
+Esta aplicación sirve para analizar la métrica y la rima de poemas en español mediante un enfoque basado en reglas fonéticas y patrones estructurales. El desarrollo de la sección métrica se fundamenta en el <strong>algoritmo de escansión Jumper</strong> (Marco Remón &amp; Gonzalo, 2021). Para la sección de rima, el sistema se apoya en un modelo, desarrollado por los mismo autores, igualmente orientado por reglas lingüísticas, capaz de detectar tanto la rima consonante como la asonante, así como variaciones singulares y plurales en las terminaciones.
+</p>
+
+<h2>Análisis métrico</h2>
+<p>
+El <strong>algoritmo de escansión</strong> (Marco Remón &amp; Gonzalo, 2021) parte de la premisa de que la unidad básica para contar sílabas es la vocal, dado que en español el núcleo de toda sílaba es vocálico. Durante el cómputo, se contemplan fenómenos como:
+</p>
+<ul>
+  <li><strong>Sinalefa</strong>: unión de vocales en contacto entre el final de una palabra y el inicio de la siguiente.</li>
+  <li><strong>Dialefa</strong>: ruptura de dicha unión (lo opuesto a la sinalefa).</li>
+  <li><strong>Sineresis</strong>: unificación de dos vocales en una sola sílaba, aun cuando habitualmente formarían hiato.</li>
+  <li><strong>Diéresis</strong>: deshacer un diptongo para incrementar el número de sílabas en casos puntuales.</li>
+</ul>
+
+<p>
+Asimismo, el algoritmo distingue la naturaleza de la última palabra del verso (aguda, llana o esdrújula) y ajusta de forma automática el recuento de sílabas según las reglas tradicionales de la métrica en español. En versos mayores de once sílabas, se aplica un proceso de <em>compensación hemistiquial</em> para identificar semiversos y sus ajustes particulares, lo que permite el análisis correcto de metros como el alejandrino o combinaciones polimétricas.
+</p>
+
+<p>
+Este algoritmo permite resolver automáticamente las <strong>ambigüedades métricas</strong> tratando todas las posibles combinaciones de sinalefas, dialefas, sinéresis y diéresis, para luego escoger la más coherente con los esquemas métricos habituales (hexasílabo, endecasílabo, alejandrino, etc.). El resultado final comprende:
+</p>
+<ul>
+  <li>Número de sílabas exacto por verso.</li>
+  <li>Patrón acentual y clasificación (por ejemplo, <em>endecasílabo heroico puro</em>, <em>octosílabo melódico pleno</em>, etc.).</li>
+  <li>Subrayado de los recursos métricos utilizados (sinalefas, dialefas, etc.) para que el usuario pueda estudiar su incidencia en el poema.</li>
+</ul>
+
+<h2>Análisis de rima</h2>
+<p>
+En cuanto a la <strong>determinación de la rima</strong>, la herramienta se basa en reglas fonéticas y estructurales propias del español, con especial atención a:
+</p>
+<ul>
+  <li>Identificación de la sílaba tónica para definir si la palabra final de cada verso es aguda, llana o esdrújula, y aislar correctamente la terminación candidata a la rima.</li>
+  <li>Extracción de rimas <em>consonantes</em> (se consideran todos los fonemas posteriores a la vocal tónica) y <em>asonantes</em> (se simplifica al juego de vocales relevantes).</li>
+  <li>Consideración de diptongos, hiatos, así como la <em>rima en singular y plural</em> (“corazón” vs. “corazones”).</li>
+</ul>
+
+<p>
+    Para determinar si una rima es consonante o asonante, la herramienta primero localiza la sílaba tónica de cada palabra y extrae la terminación fonética que sigue a esa vocal acentuada. Luego:
+    </p>
+    
+    <ul>
+      <li><strong>Rima consonante:</strong> Se comparan tanto vocales como consonantes en la terminación. Si la secuencia completa coincide (por ejemplo, <em>“-ando”</em> frente a <em>“-ando”</em>), se considera consonante.</li>
+      <li><strong>Rima asonante:</strong> Se ignoran las consonantes y se unifican vocales acentuadas y no acentuadas para comparar solo la alternancia vocálica. Si concuerdan las vocales en posición tónica y posteriores (<em>“-a-o”</em> vs. <em>“-a-o”</em>, aunque cambie alguna consonante), se considera asonante.</li>
+    </ul>  
+<p>
+Una vez detectadas las terminaciones fonéticas, el sistema asigna etiquetas (A, B, C, etc.) para cada verso que rime con otro, permitiendo descubrir <em>esquemas de rima</em> comunes, así como trazar estadísticas de uso en corpus grandes. 
+</p>
+
+<p>
+La conjunción de ambos análisis (métrico y de rima) ofrece una visión completa de la estructura poética del corpus dado. El ser un sistema basado en reglas responde con robustez a textos con mucha variación formal, al tiempo que mantiene un alto grado de precisión en la identificación de metros y rimas</em>.
+</p>
+
+<h3>Diferencia entre Jumper Web y Jumper Python</h3>
+<p>
+  La implementación en JavaScript de Jumper Web es una adaptación de la versión original en Python. Si se quiere la máxima precisión, recomendamos usar la versión de Python. Aún así, Jumper Web ofrece una precisión aceptable. Estos valores corresponden con una clasificación perfecta, es decir, que la clasificación del sistema coincida con lo etiquetados por los humanos. Con solo una variación de un acento, se considera una clasificación incorrecta. 
+  Los valores de clasificación del tipo de verso (endecasílabo, heptasílabo, etc) son entorno a 5% más en cada corpus. 
+</p>
+
+<table>
+  <tr>
+      <th></th>
+      <th>Jumper Web</th>
+      <th>Jumper Python</th>
+  </tr>
+  <tr>
+      <td>10000 endecasílabos de Navarro Colorado</td>
+      <td>87%</td>
+      <td>95%</td>
+  </tr>
+  <tr>
+      <td>Poesía Completa de Antonio Carvajal</td>
+      <td>80%</td>
+      <td>82%</td>
+  </tr>
+</table>
+
+
+
+<hr>
+<h3>Referencias</h3>
+<p><strong>Marco Remón, G., &amp; Gonzalo, J.</strong> (2021). Escansión automática de poesía española sin silabación. <em>Procesamiento del Lenguaje Natural</em>, (66), 77-87.</p>
+<p><strong>Marco Remón, G.</strong> (2021). <a target="_blank" href="https://github.com/grmarco/jumper">Versión en Python del algoritmo de análisis métrico Jumper</a></p>
+<p><strong>Navarro Colorado</strong> (2016). <a target="_blank" href="https://github.com/bncolorado/CorpusSonetosSigloDeOro">Corpus of Spanish Golden-Age Sonnets</a> </p>
+
+
+    </header>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p><strong>Desarrollado por:</strong> Guillermo Marco Remón</p>
+    <div class="citation">
+      
+    </div>
+  </footer>
+</body>
+</html>

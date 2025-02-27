@@ -15,7 +15,7 @@
  * @returns {string} HTML de la tabla generada.
  */
 export function generarTablaVersos(data) {
-    let html = `<table>
+    let html = `<table class='tablaVersos'>
       <thead>
         <tr>
           <th>Fichero</th>

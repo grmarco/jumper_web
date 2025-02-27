@@ -10,6 +10,48 @@
   <!-- Librerías externas: Chart.js y SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadZones = document.querySelectorAll('.file-upload-zone');
+  
+  uploadZones.forEach(uploadZone => {
+    const fileInput = uploadZone.querySelector('.fileUpload');
+    const browseButton = uploadZone.querySelector('.btn');
+    
+    // Al hacer clic en el botón, simula un click en el input de ficheros.
+    browseButton.addEventListener('click', function() {
+      fileInput.click();
+    });
+    
+    // Agrega eventos de drag and drop para esta zona
+    uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      uploadZone.classList.add('active');
+    });
+    
+    uploadZone.addEventListener('dragleave', function() {
+      uploadZone.classList.remove('active');
+    });
+    
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      uploadZone.classList.remove('active');
+      fileInput.files = e.dataTransfer.files;
+      // Dispara un evento "change" para actualizar la UI
+      fileInput.dispatchEvent(new Event('change'));
+    });
+    
+    fileInput.addEventListener('change', function() {
+      const count = fileInput.files.length;
+      const p = uploadZone.querySelector('p');
+      if (p) {
+        p.textContent = count + (count === 1 ? ' archivo seleccionado' : ' archivos seleccionados');
+      }
+    });
+  });
+});
+
+  </script>
 </head>
 <body>
   <!-- NAVBAR -->
@@ -18,20 +60,20 @@
       <!-- Logo de la universidad; ajusta la ruta si es necesario -->
       <img src="assets/logo_uni.png" alt="Logo Universidad" />
       <ul>
-        <li><a href="#">Esta App</a></li>
-        <li><a href="#">Acerca de</a></li>
+        <li><a href="index.html">Analizador de métrica y rima</a></li>
+        <li><a href="how-it-works.html">Cómo funciona</a></li>
       </ul>
     </div>
     <div class="navbar-right">
       <!-- Enlaces a redes: ajusta URLs e imágenes -->
-      <a href="https://github.com/tuusuario" target="_blank">
-        <img src="assets/github.png" alt="GitHub" />
+      <a href="https://github.com/grmarco/jumper_web" target="_blank">
+        <img src="https://twenty-icons.com/github.com/64" alt="GitHub" />
       </a>
-      <a href="https://linkedin.com/in/tuusuario" target="_blank">
-        <img src="assets/linkedin.png" alt="LinkedIn" />
+      <a href="https://www.linkedin.com/in/guillermo-marco-remon/" target="_blank">
+        <img src="https://twenty-icons.com/linkedin.com/64/" alt="LinkedIn" />
       </a>
-      <a href="https://twitter.com/tuusuario" target="_blank">
-        <img src="assets/twitter.png" alt="Twitter" />
+      <a href="https://twitter.com/guillermomarco_" target="_blank">
+        <img src="https://twenty-icons.com/x.com/64/" alt="Twitter" />
       </a>
     </div>
   </nav>
@@ -55,18 +97,34 @@
       <li data-tab="compareTab">Comparativa de Lotes</li>
     </ul>
 
-    <!-- TAB 1: Análisis Individual -->
+    <!-- Pestaña Individual -->
     <div id="singleTab" class="tab-content active">
-      <!-- Estructura de la pestaña: se cargará la lógica desde js/tabIndividual.js -->
       <textarea id="poemInput" placeholder="Introduce el poema aquí..."></textarea>
       <button class="btn" id="analyzeButton" type="button">Analizar Poema</button>
       <div id="resultContainer"></div>
+      <div id="individualSummary"></div>
+      <!-- Si deseas exportación, puedes incluir también: -->
+      <select id="exportFormatIndividual" style="display:none;">
+        <option value="xlsx">Excel (.xlsx)</option>
+        <option value="csv">CSV (.csv)</option>
+      </select>
+      <button id="exportButtonIndividual" class="btn" style="display:none;" type="button">Exportar</button>
     </div>
+
 
     <!-- TAB 2: Análisis en Lote (un corpus) -->
     <div id="batchTab" class="tab-content">
       <p>Selecciona uno o varios ficheros .txt (cada uno con un poema) para analizarlos:</p>
-      <input type="file" id="fileInput" multiple accept=".txt" />
+
+      <div class="file-upload-zone">
+        <div class="icon">📁</div>
+        <p>Arrastra y suelta archivos .txt aquí</p>
+        <p>o</p>
+        <button class="btn btn-secondary">Elegir archivos</button>
+        <input type="file" class="fileUpload" id="fileInput" multiple accept=".txt">
+      </div>
+
+
       <button class="btn" id="analyzeAllBtn" type="button">Analizar Lote</button>
       
       <!-- Barra de progreso -->
@@ -96,11 +154,29 @@
       <div style="display: flex; flex-wrap: wrap; gap: 10px;">
         <div style="flex: 1; min-width: 200px;">
           <h3>Corpus 1</h3>
-          <input type="file" id="fileInputCompare1" multiple accept=".txt" />
+
+          <div class="file-upload-zone">
+            <div class="icon">📁</div>
+            <p>Arrastra y suelta archivos .txt aquí</p>
+            <p>o</p>
+            <button class="btn btn-secondary">Elegir archivos</button>
+            <input type="file" class="fileUpload" id="fileInputCompare1" multiple accept=".txt">
+          </div>
+
         </div>
         <div style="flex: 1; min-width: 200px;">
           <h3>Corpus 2</h3>
-          <input type="file" id="fileInputCompare2" multiple accept=".txt" />
+
+
+          <div class="file-upload-zone">
+            <div class="icon">📁</div>
+            <p>Arrastra y suelta archivos .txt aquí</p>
+            <p>o</p>
+            <button class="btn btn-secondary">Elegir archivos</button>
+            <input type="file" class="fileUpload" id="fileInputCompare2" multiple accept=".txt">
+          </div>
+
+
         </div>
       </div>
       <button class="btn" id="analyzeCompareBtn" type="button">Analizar Comparativa</button>

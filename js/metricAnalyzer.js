@@ -895,7 +895,7 @@ function analizarVerso(verso, arte = 0, detectarAmb = 0) {
     ? 0
     : analizarPalabra(palabraFinal).factor;
   numSilabas += factorFinal;
-
+/*
   // Corrección especial endecasílabo: si 10 sílabas y acento en 5ª
   if (numSilabas === 10 && acentos.includes(5)) {
     const idxUltimaSinalefa = recursosMetricos
@@ -919,7 +919,7 @@ function analizarVerso(verso, arte = 0, detectarAmb = 0) {
       }
     }
   }
-
+*/
   // Reanálisis si excede 11 sílabas sin arte
   if (numSilabas > 11 && arte === 0) {
     const reanalisis = analizarVerso(verso, numSilabas, 0);
@@ -1194,116 +1194,4 @@ function resaltarRecursos(versoOriginal, recursosMetricos) {
   return palabrasResaltadas.join(' ');
 }
 
-/**
- * Muestra el análisis en una tabla HTML.
- * @param {object[]} analisis Array de objetos con el análisis de cada verso.
- */
-function mostrarAnalisis(analisis) {
-  const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = '';
 
-  if (analisis.length === 0) {
-    resultsDiv.innerHTML = '<p>No se encontraron versos para analizar.</p>';
-    const exportBtn = document.getElementById('exportButton');
-    if (exportBtn) exportBtn.disabled = true;
-    return;
-  }
-
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  const headers = [
-    'Número',
-    'Verso',
-    'Sílabas',
-    'Acentos',
-    'Acentos Ideales',
-    'Tipo',
-    'Ratio de Coincidencia (%)',
-    'Recursos Métricos'
-  ];
-  headers.forEach(textoEncabezado => {
-    const th = document.createElement('th');
-    th.textContent = textoEncabezado;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-  analisis.forEach((versoAnalisis, index) => {
-    const row = document.createElement('tr');
-
-    const cellNumero = document.createElement('td');
-    cellNumero.textContent = index + 1;
-    row.appendChild(cellNumero);
-
-    const cellVerso = document.createElement('td');
-    const versoResaltado = resaltarRecursos(versoAnalisis.versoOriginal, versoAnalisis.recursosMetricos);
-    cellVerso.innerHTML = versoResaltado;
-    row.appendChild(cellVerso);
-
-    const cellSilabas = document.createElement('td');
-    cellSilabas.textContent = versoAnalisis.silabas;
-    row.appendChild(cellSilabas);
-
-    const cellAcentos = document.createElement('td');
-    cellAcentos.textContent = `[${versoAnalisis.acentos.join(', ')}]`;
-    row.appendChild(cellAcentos);
-
-    const cellAcentosIdeales = document.createElement('td');
-    const acentosIdealesTexto = Array.isArray(versoAnalisis.clasificacion.acentosIdeales)
-      ? `[${versoAnalisis.clasificacion.acentosIdeales.join(', ')}]`
-      : versoAnalisis.clasificacion.acentosIdeales;
-    cellAcentosIdeales.textContent = acentosIdealesTexto;
-    row.appendChild(cellAcentosIdeales);
-
-    const cellTipo = document.createElement('td');
-    cellTipo.textContent = versoAnalisis.clasificacion.nombre;
-    row.appendChild(cellTipo);
-
-    const cellRatio = document.createElement('td');
-    cellRatio.textContent = (versoAnalisis.clasificacion.ratio * 100).toFixed(2);
-    row.appendChild(cellRatio);
-
-    const cellRecursos = document.createElement('td');
-    if (versoAnalisis.recursosMetricos && versoAnalisis.recursosMetricos.length > 0) {
-      versoAnalisis.recursosMetricos.forEach(recurso => {
-        if (recurso.tipo === RECURSOS_METRICOS.SINALEFA) {
-          cellRecursos.innerHTML += `<strong>Sinalefa:</strong> ${recurso.entre}<br>`;
-        } else if (
-          recurso.tipo === RECURSOS_METRICOS.SINERESIS ||
-          recurso.tipo === RECURSOS_METRICOS.DIERESIS
-        ) {
-          cellRecursos.innerHTML += `<strong>${recurso.tipo}:</strong> ${recurso.palabra}<br>`;
-        } else if (recurso.tipo === RECURSOS_METRICOS.DIALEFA) {
-          cellRecursos.innerHTML += `<strong>Dialefa:</strong> ${recurso.entre}<br>`;
-        }
-      });
-    } else {
-      cellRecursos.textContent = 'Ninguno';
-    }
-    row.appendChild(cellRecursos);
-
-    tbody.appendChild(row);
-  });
-  table.appendChild(tbody);
-  resultsDiv.appendChild(table);
-
-  const exportBtn = document.getElementById('exportButton');
-  if (exportBtn) exportBtn.disabled = false;
-}
-
-// ==============================
-// Event Listener para Análisis
-// ==============================
-
-document.getElementById('analyzeButton').addEventListener('click', () => {
-  const texto = document.getElementById('poemInput').value;
-  if (!texto.trim()) {
-    alert('Por favor, introduce un poema para analizar.');
-    return;
-  }
-  const analisis = escanearTexto(texto);
-  mostrarAnalisis(analisis);
-});

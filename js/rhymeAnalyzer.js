@@ -146,10 +146,6 @@ class SpanishRhymeAnnotator {
     let consonante = word.slice(posAcento);
     //  Copia para la versión que usaremos al calcular la asonancia
     let consonanteAso = consonante;
-
-    console.log("Palabra normalizada: ", word);
-    console.log("Posición de la vocal acentuada: ", posAcento);
-    console.log("Rima consonante: ", consonante);
   
     // 4. Si la primera letra es vocal sin acento, cámbiala por la vocal acentuada equivalente
     if (consonante && vocalesRhymeNoAcentuadasRhyme.includes(consonante[0])) {
@@ -194,11 +190,6 @@ class SpanishRhymeAnnotator {
       }
     }
   
-    // (Opcional) Logs de comprobación
-    console.log("Palabra normalizada: ", word);
-    console.log("Posición de la vocal acentuada: ", posAcento);
-    console.log("Rima consonante: ", consonante);
-    console.log("Rima asonante: ", asonancia);
   
     // 7. Devuelve los datos de rima
     return {
