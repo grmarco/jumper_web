@@ -1,126 +1,140 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analizador de Métrica y Rimas</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    textarea {
-      width: 100%;
-      height: 200px;
-      font-size: 14px;
-      padding: 10px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 14px;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    .highlight {
-      font-weight: bold;
-      color: #0066cc;
-    }
-  </style>
+  <!-- CSS Global -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Librerías externas: Chart.js y SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <h1>Analizador de Métrica y Rimas</h1>
-  <textarea id="poemInput" placeholder="Introduce el poema aquí..."></textarea>
-  <br>
-  <button id="analyzeButton">Analizar Poema</button>
-  <div id="resultContainer"></div>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <!-- Logo de la universidad; ajusta la ruta si es necesario -->
+      <img src="assets/logo_uni.png" alt="Logo Universidad" />
+      <ul>
+        <li><a href="#">Esta App</a></li>
+        <li><a href="#">Acerca de</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <!-- Enlaces a redes: ajusta URLs e imágenes -->
+      <a href="https://github.com/tuusuario" target="_blank">
+        <img src="assets/github.png" alt="GitHub" />
+      </a>
+      <a href="https://linkedin.com/in/tuusuario" target="_blank">
+        <img src="assets/linkedin.png" alt="LinkedIn" />
+      </a>
+      <a href="https://twitter.com/tuusuario" target="_blank">
+        <img src="assets/twitter.png" alt="Twitter" />
+      </a>
+    </div>
+  </nav>
 
-  <!-- Se incluyen los módulos de análisis -->
-  <script src="metricAnalyzer.js"></script>
-  <script src="rhymeAnalyzer.js"></script>
-  <script>
-    document.getElementById('analyzeButton').addEventListener('click', function() {
-      const poem = document.getElementById('poemInput').value;
+  <div class="container">
+    <h1>Analizador de Métrica y Rimas</h1>
+
+    <!-- Explicación breve de la app -->
+    <header>
+      <p>
+        Este programa permite analizar la métrica y las rimas de poemas en español. Se puede trabajar en tres modos: 
+        análisis individual de un poema, análisis en lote (un corpus) y comparativa de dos corpus.
+      </p>
+    </header>
+
+
+    <!-- TABS -->
+    <ul class="tabs">
+      <li class="active" data-tab="singleTab">Análisis Individual</li>
+      <li data-tab="batchTab">Análisis en Lote</li>
+      <li data-tab="compareTab">Comparativa de Lotes</li>
+    </ul>
+
+    <!-- TAB 1: Análisis Individual -->
+    <div id="singleTab" class="tab-content active">
+      <!-- Estructura de la pestaña: se cargará la lógica desde js/tabIndividual.js -->
+      <textarea id="poemInput" placeholder="Introduce el poema aquí..."></textarea>
+      <button class="btn" id="analyzeButton" type="button">Analizar Poema</button>
+      <div id="resultContainer"></div>
+    </div>
+
+    <!-- TAB 2: Análisis en Lote (un corpus) -->
+    <div id="batchTab" class="tab-content">
+      <p>Selecciona uno o varios ficheros .txt (cada uno con un poema) para analizarlos:</p>
+      <input type="file" id="fileInput" multiple accept=".txt" />
+      <button class="btn" id="analyzeAllBtn" type="button">Analizar Lote</button>
       
-      // Análisis métrico: se asume que la función escanearTexto devuelve un array
-      // con el análisis de cada verso (con propiedades como versoOriginal, silabas, acentos, clasificacion y recursosMetricos).
-      const metricAnalysis = escanearTexto(poem);
+      <!-- Barra de progreso -->
+      <div id="progressContainer">
+        <div id="progressBar"></div>
+      </div>
+      <p id="progressText"></p>
+      <select id="exportFormatBatch" style="display:none;">
+        <option value="xlsx">Excel (.xlsx)</option>
+        <option value="csv">CSV (.csv)</option>
+      </select>
+      <button id="exportBatchBtn" class="btn" style="display:none;" type="button">Exportar Lote</button>
       
-      // Análisis de rima: obtenemos esquema, detalles y grupos usando SpanishRhymeAnnotator.
-      const rhymeResult = SpanishRhymeAnnotator.getRhymeScheme(poem);
-      const rhymeScheme = rhymeResult.scheme.split(''); // array con etiqueta por línea
-      const rhymeDetails = rhymeResult.details;
-      const rhymeGroups = rhymeResult.groups;
+      <!-- Aquí se mostrarán la tabla, estadísticas y gráficos -->
+      <div id="statsContainer"></div>
+      <div id="extraStatsContainer"></div>
+      <canvas id="chartRima" width="300" height="200"></canvas>
+      <canvas id="chartVerso" width="400" height="200"></canvas>
+
+      <div id="batchResultContainer"></div>
+
+    </div>
+
+    <!-- TAB 3: Comparativa de Lotes (dos corpus) -->
+    <div id="compareTab" class="tab-content">
+      <p>Sube dos corpus de ficheros .txt. Cada corpus representa un conjunto de poemas.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div style="flex: 1; min-width: 200px;">
+          <h3>Corpus 1</h3>
+          <input type="file" id="fileInputCompare1" multiple accept=".txt" />
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+          <h3>Corpus 2</h3>
+          <input type="file" id="fileInputCompare2" multiple accept=".txt" />
+        </div>
+      </div>
+      <button class="btn" id="analyzeCompareBtn" type="button">Analizar Comparativa</button>
+      <!-- Barra de progreso para la comparativa -->
+      <div id="compareProgressContainer">
+        <div id="compareProgressBar"></div>
+      </div>
+      <p id="compareProgressText"></p>
+      <select id="exportFormatCompare" style="display:none;">
+        <option value="xlsx">Excel (.xlsx)</option>
+        <option value="csv">CSV (.csv)</option>
+      </select>
+      <button id="exportCompareBtn" class="btn" style="display:none;" type="button">Exportar Comparativa</button>
       
-      // Generamos una tabla integrada: cada fila contendrá la información métrica y de rima para cada verso.
-      let output = "<h2>Análisis Integrado de Métrica y Rimas</h2>";
-      output += "<table>";
-      output += "<thead><tr>" +
-                "<th>Línea</th>" +
-                "<th>Verso</th>" +
-                "<th>Sílabas</th>" +
-                "<th>Acentos</th>" +
-                "<th>Clasificación Métrica</th>" +
-                "<th>Recursos Métricos</th>" +
-                "<th>Etiqueta de Rima</th>" +
-                "<th>Tipo de Rima</th>" +
-                "<th>Detalle de Rima</th>" +
-                "</tr></thead><tbody>";
+      <!-- Se mostrarán las tablas comparativas y un gráfico de clasificación métrica -->
+      <div id="compareStatsContainer"></div>
+      <div id="compareSyllableContainer"></div>
+      <div id="compareResourcesContainer"></div>
+      <div id="compareRhymeDetailContainer"></div>
+      <canvas id="chartClassifCompare" style="max-width:100%;"></canvas>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p><strong>Desarrollado por:</strong> Guillermo Marco Remón</p>
+    <div class="citation">
       
-      // Se asume que ambas salidas tienen el mismo número de versos.
-      const numLines = Math.min(metricAnalysis.length, rhymeDetails.length);
-      for (let i = 0; i < numLines; i++) {
-        const m = metricAnalysis[i];
-        const r = rhymeDetails[i];
-        const rhymeLabel = rhymeScheme[i] || '-';
-        
-        let rhymeType = '-';
-        let rhymeFragment = '-';
-        if (rhymeLabel !== '-' && rhymeGroups[rhymeLabel]) {
-          rhymeType = rhymeGroups[rhymeLabel].tipo;
-          rhymeFragment = rhymeGroups[rhymeLabel].rima;
-        }
-        
-        output += "<tr>";
-        output += "<td>" + (i + 1) + "</td>";
-        output += "<td>" + m.versoOriginal + "</td>";
-        output += "<td>" + m.silabas + "</td>";
-        output += "<td>" + m.acentos.join(", ") + "</td>";
-        output += "<td>" + m.clasificacion.nombre + "</td>";
-        // Convertimos el array de recursos métricos en una cadena legible.
-        if (m.recursosMetricos && m.recursosMetricos.length > 0) {
-          const recursosStr = m.recursosMetricos.map(rec => {
-            if (rec.tipo === RECURSOS_METRICOS.SINALEFA || rec.tipo === RECURSOS_METRICOS.DIALEFA) {
-              return rec.tipo + " (" + rec.entre + ")";
-            } else {
-              return rec.tipo + " (" + rec.palabra + ")";
-            }
-          }).join(", ");
-          output += "<td>" + recursosStr + "</td>";
-        } else {
-          output += "<td>-</td>";
-        }
-        output += "<td class='highlight'>" + rhymeLabel + "</td>";
-        output += "<td>" + rhymeType + "</td>";
-        output += "<td>" + rhymeFragment + "</td>";
-        output += "</tr>";
-      }
-      
-      output += "</tbody></table>";
-      output += "<h3>Esquema de Rima Completo: " + rhymeResult.scheme + "</h3>";
-      
-      document.getElementById('resultContainer').innerHTML = output;
-    });
-  </script>
+    </div>
+  </footer>
+
+  <!-- Carga de scripts (usamos type="module" para poder usar import/export) -->
+  <script src="js/metricAnalyzer.js"></script>
+  <script src="js/rhymeAnalyzer.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
