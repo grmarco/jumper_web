@@ -1,0 +1,54 @@
+# Trae jumper.py desde el repositorio del motor y comprueba que la web sigue
+# dando exactamente lo mismo que el Python del sistema.
+#
+# Es la pieza que impide que vuelva a pasar lo que pasó: durante años la web
+# llevó un port del algoritmo a JavaScript que se quedó en la versión de 2021
+# mientras el original seguía mejorando. Aquí no hay port. Si el motor cambia,
+# este trabajo abre un pull request con el fichero nuevo, y no se funde si la
+# prueba de conformidad falla.
+
+name: motor
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # los lunes
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Traer jumper.py del repositorio del motor
+        run: |
+          curl -fsSL -o jumper.py \
+            https://raw.githubusercontent.com/grmarco/jumper/master/jumper.py
+          git diff --quiet -- jumper.py && echo "sin cambios" || echo "el motor ha cambiado"
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Conformidad — el navegador debe dar lo mismo que Python
+        run: |
+          npm install --no-save pyodide@0.28.3
+          node test/conformidad.mjs
+
+      - name: Proponer el motor nuevo
+        uses: peter-evans/create-pull-request@v6
+        with:
+          add-paths: jumper.py
+          branch: motor-al-dia
+          title: 'Actualizar jumper.py desde el repositorio del motor'
+          commit-message: 'Actualizar jumper.py desde el repositorio del motor'
+          body: |
+            `jumper.py` traído de [grmarco/jumper](https://github.com/grmarco/jumper).
+            La prueba de conformidad ha pasado con este fichero: el motor del
+            navegador y el Python del sistema dan la misma escansión verso a verso.

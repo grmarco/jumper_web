@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis por lotes — Jumper</title>
+<meta name="description" content="Escande muchos poemas de una vez y exporta la tabla de versos, medidas, acentos y rima.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="envoltorio">
+
+  <p class="migas"><a href="index.html">← Jumper</a></p>
+
+  <header class="principal">
+    <div class="marca">
+      <h1>Por lotes</h1>
+      <p class="lema">un fichero por obra</p>
+    </div>
+    <p class="aviso-motor" id="aviso"><span class="punto"></span>preparando el analizador…</p>
+  </header>
+
+  <section class="entrada">
+    <label class="zona" id="zona" for="ficheros">
+      <span class="grande">Arrastra aquí los ficheros de texto</span>
+      <span class="pista">o pulsa para elegirlos. Un fichero por obra, un verso por línea.
+      Se analizan en tu navegador: no se suben a ningún sitio.</span>
+      <input type="file" id="ficheros" multiple accept=".txt,text/plain" hidden>
+    </label>
+    <div class="acciones">
+      <button id="exportar" hidden>Exportar CSV</button>
+    </div>
+  </section>
+
+  <div id="salida"></div>
+
+  <footer>
+    <p><a class="enlace-doc" href="how-it-works.html">Cómo funciona →</a></p>
+    <p>El CSV lleva una fila por verso: obra, número, verso, medida, acentos,
+    tipo, licencias métricas, letra de rima, si es consonante o asonante, la
+    terminación rimante y la forma estrófica de la obra.</p>
+    <p class="firma">
+      <a href="https://sites.google.com/view/nlp-uned/home"><img src="assets/logo_uni.png" alt="UNED" height="34"></a>
+      <span>Grupo de Procesamiento del Lenguaje Natural y Recuperación de
+      Información de la UNED. <a href="https://github.com/grmarco/jumper_web">código</a></span>
+    </p>
+  </footer>
+
+</div>
+<script type="module" src="js/lote.js"></script>
+</body>
+</html>
