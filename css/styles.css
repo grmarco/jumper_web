@@ -39,48 +39,94 @@ body{
   font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
   font-size:16.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
 }
-.envoltorio{max-width:62rem;margin:0 auto;padding:clamp(1.6rem,4vw,3.5rem) clamp(1rem,4vw,2.5rem) 5rem}
+.envoltorio{max-width:62rem;margin:0 auto;padding:clamp(1.6rem,4vw,3rem) clamp(1rem,4vw,2.5rem) 4rem}
 a{color:var(--tonica)}
 :focus-visible{outline:2px solid var(--tonica);outline-offset:3px;border-radius:3px}
 
 /* ---------- cabecera ---------- */
 header.principal{border-bottom:1px solid var(--linea);padding-bottom:1.6rem;margin-bottom:2rem}
-
-/* ---------- navegación ---------- */
+/* ---------- navegación ----------
+   Fija arriba y translúcida: en una página que se recorre mucho —un poema
+   largo, una tabla de mil versos— tener siempre a mano el cambio de sección
+   vale más que los cuarenta píxeles que ocupa. */
 .navegacion{
-  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
-  padding-bottom:1rem;margin-bottom:1.8rem;border-bottom:1px solid var(--linea);
+  position:sticky;top:0;z-index:20;overflow:hidden;
+  background:color-mix(in srgb, var(--papel) 82%, transparent);
+  backdrop-filter:saturate(1.6) blur(10px);
+  -webkit-backdrop-filter:saturate(1.6) blur(10px);
+  border-bottom:1px solid var(--linea);
+}
+@supports not (backdrop-filter:blur(1px)){.navegacion{background:var(--papel)}}
+.navegacion-dentro{
+  display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
+  max-width:62rem;margin:0 auto;padding:.7rem clamp(1rem,4vw,2.5rem);
 }
 .marca-mini{
-  font-family:Newsreader,Georgia,serif;font-size:1.15rem;font-weight:500;
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:Newsreader,Georgia,serif;font-size:1.18rem;font-weight:500;
   color:var(--tinta);text-decoration:none;letter-spacing:-.01em;
 }
-.navegacion ul{display:flex;gap:1.1rem;list-style:none;margin:0;padding:0;flex:1;flex-wrap:wrap}
+.pip{
+  width:.45rem;height:.45rem;border-radius:50%;background:var(--tonica);
+  transition:transform .25s cubic-bezier(.2,.8,.3,1);
+}
+.marca-mini:hover .pip{transform:scale(1.5)}
+.navegacion ul{display:flex;gap:.3rem;list-style:none;margin:0;padding:0;flex:1;flex-wrap:wrap}
 .navegacion a:not(.marca-mini){
-  font-size:.88rem;color:var(--tinta-tenue);text-decoration:none;
-  padding:.25rem 0;border-bottom:1.5px solid transparent;
+  position:relative;display:block;font-size:.88rem;color:var(--tinta-tenue);
+  text-decoration:none;padding:.35rem .6rem;border-radius:5px;
+  transition:color .15s, background .15s;
 }
-.navegacion a:hover:not(.marca-mini){color:var(--tinta)}
-.navegacion a[aria-current="page"]{color:var(--tinta);border-bottom-color:var(--tonica)}
+.navegacion a:not(.marca-mini):hover{color:var(--tinta);background:var(--linea-suave)}
+.navegacion a[aria-current="page"]{color:var(--tinta);font-weight:500}
+.navegacion a[aria-current="page"]::after{
+  content:'';position:absolute;left:.6rem;right:.6rem;bottom:-.72rem;height:2px;
+  background:var(--tonica);border-radius:2px 2px 0 0;
+}
 .tema{
-  flex:none;background:transparent;color:var(--tinta-tenue);border:1px solid var(--linea);
-  font-size:.9rem;line-height:1;padding:.35rem .5rem;border-radius:4px;
+  flex:none;display:grid;place-items:center;width:2rem;height:2rem;padding:0;
+  background:transparent;border:1px solid var(--linea);border-radius:6px;
+  color:var(--tinta-tenue);transition:color .15s, border-color .15s, transform .15s;
 }
+.tema svg{width:1rem;height:1rem}
+.tema circle{fill:none;stroke:currentColor;stroke-width:1.4}
+.tema path{fill:currentColor}
 .tema:hover{color:var(--tinta);border-color:var(--tinta-tenue)}
+.tema:active{transform:scale(.92)}
+
+/* ---------- cabecera de la página ---------- */
 .marca{display:flex;align-items:baseline;gap:.9rem;flex-wrap:wrap}
 h1{
   font-family:Newsreader,Georgia,serif;font-weight:500;
   font-size:clamp(2rem,5vw,2.9rem);line-height:1;letter-spacing:-.015em;margin:0;
+  text-wrap:balance;
 }
-.lema{font-family:Newsreader,Georgia,serif;font-size:1.05rem;color:var(--tinta-suave);font-style:italic}
+.lema{font-family:Newsreader,Georgia,serif;font-size:1.05rem;color:var(--tinta-suave);font-style:italic;margin:0}
+
+/* ---------- el aviso del motor ----------
+   Descargar el intérprete tarda unos segundos la primera vez. Ese hueco, sin
+   nada que lo explique, se lee como que la página está rota. */
 .aviso-motor{
-  margin-top:.9rem;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  display:flex;align-items:center;gap:.5rem;margin:.9rem 0 0;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-size:.74rem;letter-spacing:.06em;color:var(--tinta-tenue);
 }
-.aviso-motor.listo{color:var(--tinta-tenue)}
-.aviso-motor .punto{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
-  background:var(--tinta-tenue);margin-right:.45rem;vertical-align:.02em}
-.aviso-motor.listo .punto{background:var(--tonica)}
+.aviso-motor .punto{
+  flex:none;width:.5rem;height:.5rem;border-radius:50%;background:var(--tinta-tenue);
+}
+/* mientras carga, el punto late: quieto no distingue «cargando» de «colgado» */
+.aviso-motor:not(.listo):not(.problema) .punto{animation:latido 1.3s ease-in-out infinite}
+.aviso-motor.listo .punto{background:var(--tonica);animation:none}
+.aviso-motor.problema{color:var(--tonica)}
+.aviso-motor.problema .punto{background:var(--tonica)}
+@keyframes latido{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+.aviso-motor .pasos{display:inline-flex;gap:.22rem;margin-left:.15rem}
+.aviso-motor .pasos i{
+  display:block;width:.9rem;height:2px;border-radius:1px;background:var(--linea);
+  transition:background .3s;
+}
+.aviso-motor .pasos i.hecho{background:var(--tonica)}
+@media (prefers-reduced-motion:reduce){.aviso-motor .punto{animation:none!important}}
 
 /* ---------- entrada ---------- */
 .entrada{margin-bottom:2.2rem}
@@ -193,46 +239,80 @@ span.verso{display:flex}
 
 /* ---------- poema ---------- */
 .poema{list-style:none;margin:.8rem 0 0;padding:0}
-.linea{border-bottom:1px solid var(--linea-suave)}
+.linea{
+  border-bottom:1px solid var(--linea-suave);
+  border-left:2px solid transparent;
+  transition:border-left-color .2s, background .2s;
+}
 .linea:last-child{border-bottom:none}
+.linea.abierta{border-left-color:var(--tonica);background:var(--linea-suave)}
+
+/* El verso entero es el objetivo del clic: en un móvil apuntar a una línea de
+   texto de 1,1 rem es incómodo, así que la fila completa responde. */
 .abrir{
   display:flex;align-items:center;gap:.9rem;width:100%;
-  background:transparent;border:none;border-radius:4px;padding:.15rem .3rem;
+  background:transparent;border:none;border-radius:0;padding:.15rem .6rem;
   color:inherit;font:inherit;font-weight:400;text-align:left;cursor:pointer;
+  transition:background .15s;
 }
-.abrir:hover,.abrir[aria-expanded="true"]{background:var(--linea-suave)}
+.abrir:hover{background:var(--linea-suave)}
+/* abierta, el fondo lo pone la fila entera para que cabecera y detalle sean
+   un solo bloque; si además lo pusiera el botón, la cabecera saldría más clara */
+.linea.abierta .abrir,.linea.abierta .abrir:hover{background:transparent}
+.abrir:active .verso{transform:scale(.995)}
+.abrir .verso{transition:transform .1s}
+
 .linea .verso{font-size:1.18rem;padding:.55rem 0 .2rem;flex:1;row-gap:.75rem}
 .linea .sil{padding:.45rem .16rem .6rem}
 /* la numeración de sílabas sólo aparece al desplegar: plegado no cabe, y es
    parte de lo que se gana al abrir */
 .linea .sil .num{display:none}
-.abrir[aria-expanded="true"] .sil .num{display:block}
-.abrir[aria-expanded="true"] .sil{padding-bottom:1.15rem}
-.abrir[aria-expanded="true"] .arco-abajo{bottom:.68rem}
-.abrir[aria-expanded="true"] .verso{padding-bottom:.4rem;row-gap:1rem}
 .linea .arco-abajo{bottom:.14rem}
+.linea.abierta .sil .num{display:block}
+.linea.abierta .sil{padding-bottom:1.15rem}
+.linea.abierta .arco-abajo{bottom:.68rem}
+.linea.abierta .verso{padding-bottom:.4rem;row-gap:1rem}
+
 .chevron{
   flex:none;width:.5rem;height:.5rem;margin-right:.15rem;
   border-right:1.5px solid var(--tinta-tenue);border-bottom:1.5px solid var(--tinta-tenue);
-  transform:rotate(45deg);transition:transform .15s;
+  transform:rotate(45deg) translateY(-1px);
+  transition:transform .28s cubic-bezier(.2,.8,.3,1), border-color .15s;
 }
-.abrir[aria-expanded="true"] .chevron{transform:rotate(-135deg)}
-@media (prefers-reduced-motion:reduce){.chevron{transition:none}}
-.detalle{padding:.2rem 0 1.3rem 2.4rem}
-.detalle .verso{font-size:1.35rem}
+.abrir:hover .chevron{border-color:var(--tinta)}
+.linea.abierta .chevron{transform:rotate(-135deg) translateY(-1px);border-color:var(--tonica)}
+
+/* El acordeón: se anima `grid-template-rows` de 0fr a 1fr, que es la única
+   forma de abrir hacia una altura desconocida sin medirla con JavaScript y sin
+   dejar un `max-height` inventado que recorte los versos largos. */
+.detalle{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .3s cubic-bezier(.2,.8,.3,1), opacity .2s;
+  opacity:0;
+}
+.detalle > *{overflow:hidden;min-height:0}
+.linea.abierta .detalle{grid-template-rows:1fr;opacity:1}
+.detalle-dentro{padding:.2rem 0 1.4rem 2.4rem}
 .detalle .sub{
   font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;font-weight:500;
   letter-spacing:.11em;text-transform:uppercase;color:var(--tinta-tenue);
   margin:1.4rem 0 0;
 }
-.rima{
-  flex:none;width:1.5rem;text-align:center;
-  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.82rem;font-weight:600;
+
+/* Mientras se calculan las alternativas se ocupa aproximadamente el sitio que
+   van a ocupar, para que al llegar no den un salto. */
+.esqueleto{display:grid;gap:.55rem;padding-top:.4rem}
+.esqueleto span{
+  display:block;height:.7rem;border-radius:3px;
+  background:linear-gradient(90deg,var(--linea-suave) 25%,var(--linea) 50%,var(--linea-suave) 75%);
+  background-size:200% 100%;animation:brillo 1.4s linear infinite;
 }
-.rima.consonante{color:var(--tonica)}
-.rima.asonante{color:var(--atona)}
-.rima.suelto{color:var(--tinta-tenue);font-weight:400}
-.linea .medida{flex:none;width:1.8rem;text-align:right;font-size:.78rem;color:var(--tinta-tenue)}
+.esqueleto span:nth-child(1){width:35%}
+.esqueleto span:nth-child(2){width:62%}
+.esqueleto span:nth-child(3){width:48%;margin-top:.7rem}
+.esqueleto span:nth-child(4){width:70%}
+.esqueleto span:nth-child(5){width:55%}
+@keyframes brillo{from{background-position:200% 0}to{background-position:-200% 0}}
 
 /* ---------- resumen ---------- */
 .resumen{display:flex;gap:1.6rem;flex-wrap:wrap;font-size:.9rem}
@@ -244,9 +324,33 @@ span.verso{display:flex}
 .leyenda span{display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
 .leyenda .muestra{font-family:Newsreader,Georgia,serif;font-size:1.05rem;color:var(--tinta)}
 
-footer{border-top:1px solid var(--linea);margin-top:2.5rem;padding-top:1.4rem;
-  font-size:.82rem;color:var(--tinta-tenue)}
-footer p{max-width:60ch}
+/* ---------- pie ---------- */
+footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
+.pie-rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:2rem}
+.pie-bloque h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-tenue);
+  margin:0 0 .6rem;
+}
+.pie-bloque p{margin:0 0 .6rem;font-size:.84rem;line-height:1.6;color:var(--tinta-suave)}
+.pie-bloque .cita{font-size:.8rem;color:var(--tinta-tenue)}
+.pie-bloque .enlaces{display:flex;gap:1rem;flex-wrap:wrap}
+.pie-bloque .enlaces a{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.74rem;
+  letter-spacing:.05em;color:var(--tinta-suave);text-decoration:none;
+  border-bottom:1px solid var(--linea);padding-bottom:.1rem;
+}
+.pie-bloque .enlaces a:hover{color:var(--tonica);border-bottom-color:var(--tonica)}
+.pie-firma{
+  display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;
+  border-top:1px solid var(--linea-suave);margin-top:2rem;padding-top:1.2rem;
+  font-size:.78rem;color:var(--tinta-tenue);
+}
+.pie-firma img{opacity:.7;flex:none}
+:root[data-tema="oscuro"] .pie-firma img{filter:invert(1) hue-rotate(180deg);opacity:.75}
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]) .pie-firma img{filter:invert(1) hue-rotate(180deg);opacity:.75}
+}
 
 /* ---------- móvil ----------
    El verso parte en varias filas y hay que verlo: por eso `row-gap`, para que
@@ -266,13 +370,13 @@ footer p{max-width:60ch}
   .sil{padding:.55rem .14rem 1.05rem}
   .cesura{margin:0 .3rem}
 
-  .abrir{gap:.55rem;flex-wrap:wrap;padding:.35rem .2rem}
+  .abrir{gap:.55rem;flex-wrap:wrap;padding:.5rem .4rem}
   .linea .verso{font-size:1.1rem;flex:1 0 100%;order:3;row-gap:1rem;padding:.1rem 0 .3rem}
   .linea .rima{width:auto;min-width:1.1rem;text-align:left}
   .linea .medida{width:auto;text-align:left}
   .linea .medida::after{content:' sílabas';color:var(--tinta-tenue)}
   .chevron{margin-left:auto}
-  .detalle{padding-left:.2rem}
+  .detalle-dentro{padding-left:.4rem}
 
   .ficha{gap:.6rem 1.4rem}
   .alternativa .cabeza{gap:.5rem}
@@ -329,7 +433,7 @@ footer p{max-width:60ch}
 .zona:hover,.zona.encima{border-color:var(--tonica);border-style:solid}
 .zona .grande{font-family:Newsreader,Georgia,serif;font-size:1.25rem;color:var(--tinta)}
 .zona .pista{max-width:34rem}
-.rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.2rem}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.2rem;align-items:start}
 .rejilla .tarjeta{margin-bottom:0}
 
 .reparto{list-style:none;margin:.6rem 0 0;padding:0;display:grid;gap:.35rem;font-size:.85rem}
@@ -355,9 +459,86 @@ footer p{max-width:60ch}
 .tabla .verso-crudo{font-family:Newsreader,Georgia,serif;font-size:1rem;min-width:16rem}
 .fuente{font-size:.8rem;color:var(--tinta-tenue);margin:.7rem 0 0}
 
-.firma{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
-.firma img{opacity:.75;flex:none}
-:root[data-tema="oscuro"] .firma img{filter:invert(1) hue-rotate(180deg);opacity:.8}
-@media (prefers-color-scheme: dark){
-  :root:not([data-tema="claro"]) .firma img{filter:invert(1) hue-rotate(180deg);opacity:.8}
+
+
+/* ================= AVISOS DE TRABAJO =================
+   Tres señales para tres preguntas: ¿he pulsado?, ¿está calculando?, ¿lo que
+   veo es de lo que acabo de escribir? */
+
+/* 1. ¿está calculando? — una barra fina bajo la navegación. Indeterminada a
+   propósito: no sabemos cuánto va a tardar, y fingir un porcentaje es mentir. */
+.navegacion::after{
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--tonica);transform:scaleX(0);transform-origin:left;
+  opacity:0;transition:opacity .2s;
+}
+:root.trabajando .navegacion::after{
+  opacity:1;animation:recorre 1.1s cubic-bezier(.65,0,.35,1) infinite;
+}
+@keyframes recorre{
+  0%{transform:translateX(-100%) scaleX(.35)}
+  100%{transform:translateX(100%) scaleX(.35)}
+}
+
+/* 2. ¿he pulsado? — el botón lo dice y se queda ocupado */
+button{transition:background .15s, border-color .15s, transform .1s, opacity .15s}
+button:active{transform:scale(.97)}
+button[data-trabajando]{position:relative;color:transparent}
+button[data-trabajando]::after{
+  content:'';position:absolute;inset:0;margin:auto;width:1rem;height:1rem;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;
+  animation:gira .7s linear infinite;
+}
+button.secundario[data-trabajando]::after{
+  border-color:var(--linea);border-top-color:var(--tinta);
+}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+/* 3. mientras se recalcula, lo anterior se atenúa en vez de desaparecer:
+   borrarlo deja la pantalla en blanco justo cuando hace falta comparar */
+#salida{transition:opacity .2s}
+#salida.atenuado{opacity:.32;pointer-events:none}
+#salida.caduco .tarjeta{opacity:.55}
+.cinta-caduco{
+  display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;
+  background:var(--superficie);border:1px solid var(--tonica);border-radius:8px;
+  padding:.7rem 1rem;margin-bottom:1.2rem;font-size:.86rem;color:var(--tinta-suave);
+}
+.cinta-caduco button{
+  padding:.3rem .7rem;font-size:.8rem;background:transparent;color:var(--tonica);
+  border-color:var(--tonica);
+}
+.cinta-caduco button:hover{background:var(--tonica);color:#fff}
+
+/* la entrada, escalonada */
+.entra{animation:asoma .34s cubic-bezier(.2,.8,.3,1) both;animation-delay:var(--retraso,0ms)}
+@keyframes asoma{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .entra{animation:none}
+  .detalle{transition:none}
+  .chevron{transition:none}
+  .esqueleto span{animation:none}
+  :root.trabajando .navegacion::after{animation:none;transform:scaleX(1);opacity:.55}
+  button[data-trabajando]::after{animation:none}
+}
+
+.tarjeta.problema{border-color:var(--tonica)}
+.tarjeta.problema p{color:var(--tinta-suave);font-size:.88rem;margin:.4rem 0 0}
+
+/* ---------- progreso del lote ----------
+   Aquí sí se sabe cuánto queda: hay tantos ficheros como hay. Por eso la barra
+   es determinada, al revés que la de la navegación. */
+.progreso{margin-top:1rem;animation:asoma .25s both}
+.progreso .barra{height:3px;background:var(--linea-suave);border-radius:2px;overflow:hidden}
+.progreso .barra i{
+  display:block;height:100%;background:var(--tonica);border-radius:2px;
+  transition:width .3s cubic-bezier(.2,.8,.3,1);
+}
+.detalle-progreso{
+  display:flex;gap:.9rem;align-items:baseline;margin:.5rem 0 0;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;
+  color:var(--tinta-tenue);
+}
+.detalle-progreso .nombre{
+  flex:1;color:var(--tinta-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }

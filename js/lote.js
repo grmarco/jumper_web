@@ -8,17 +8,16 @@
 import * as motor from './motor.js';
 import { filasDePoema, resumenDe, aCSV, COLUMNAS } from './tabla.js';
 import { libro } from './xlsx.js';
+import * as señal from './estado.js';
 
 const $ = (sel) => document.querySelector(sel);
 const salida = $('#salida');
 const aviso = $('#aviso');
+const progreso = $('#progreso');
 
 let filas = [];   // una por verso, es lo que se exporta
 
-function estado(mensaje, listo = false) {
-  aviso.innerHTML = `<span class="punto"></span>${mensaje}`;
-  aviso.classList.toggle('listo', listo);
-}
+const estado = señal.crearAviso(aviso);
 
 const escapar = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -88,37 +87,79 @@ function guardar(blob, nombre) {
   URL.revokeObjectURL(url);
 }
 
+/** Aquí el progreso sí se sabe: hay tantos ficheros como hay. */
+function avance(hechos, total, nombre) {
+  const pct = Math.round((hechos / total) * 100);
+  progreso.hidden = false;
+  progreso.innerHTML = `
+    <div class="barra"><i style="width:${pct}%"></i></div>
+    <p class="detalle-progreso">
+      <span>${hechos} de ${total}</span>
+      <span class="nombre">${nombre}</span>
+      <span class="cifra">${filas.length} versos</span>
+    </p>`;
+}
+
 async function analizarFicheros(ficheros) {
   filas = [];
   $('#exportacion').hidden = true;
+  salida.innerHTML = '';
+  señal.trabajando(true);
+  const lista = [...ficheros];
   const obras = [];
-  for (const [i, f] of [...ficheros].entries()) {
-    estado(`analizando ${i + 1} de ${ficheros.length}: ${f.name}`);
-    const texto = await f.text();
-    if (!texto.trim()) continue;
-    obras.push(await analizarObra(f.name.replace(/\.[^.]+$/, ''), texto));
+  try {
+    for (const [i, f] of lista.entries()) {
+      avance(i, lista.length, f.name);
+      estado(`analizando ${f.name}`);
+      const texto = await f.text();
+      if (!texto.trim()) continue;
+      obras.push(await analizarObra(f.name.replace(/\.[^.]+$/, ''), texto));
+      // un respiro entre ficheros para que el navegador pinte el avance; sin
+      // esto la barra se queda congelada hasta el final y no sirve de nada
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    avance(lista.length, lista.length, 'listo');
+    if (!filas.length) {
+      salida.innerHTML = '<section class="tarjeta"><h2>nada que analizar</h2>'
+        + '<p class="pista">Los ficheros estaban vacíos, o no tenían versos.</p></section>';
+      estado('listo', 'listo');
+      return;
+    }
+    salida.innerHTML = resumen(obras) + muestra();
+    señal.animarEntrada(salida);
+    $('#exportacion').hidden = false;
+    estado(`${filas.length} versos de ${obras.length} obra${obras.length === 1 ? '' : 's'}`, 'listo');
+  } catch (e) {
+    salida.innerHTML = `<section class="tarjeta problema"><h2>no se ha podido analizar</h2>
+      <p>${String(e.message || e)}</p></section>`;
+    estado('algo ha fallado', 'problema');
+  } finally {
+    señal.trabajando(false);
+    setTimeout(() => { progreso.hidden = true; }, 900);
   }
-  if (!filas.length) {
-    salida.innerHTML = '<section class="tarjeta"><h2>nada que analizar</h2>'
-      + '<p class="pista">Los ficheros estaban vacíos.</p></section>';
-    estado('analizador listo', true);
-    return;
-  }
-  salida.innerHTML = resumen(obras) + muestra();
-  $('#exportacion').hidden = false;
-  estado(`${filas.length} versos analizados`, true);
 }
 
-$('#ficheros').addEventListener('change', async (e) => {
-  if (!e.target.files.length) return;
-  salida.innerHTML = '<p class="pista">analizando…</p>';
-  await motor.preparar((paso) => estado(paso));
-  await analizarFicheros(e.target.files);
-});
-$('#excel').addEventListener('click', () =>
-  guardar(libro(COLUMNAS, filas, 'Escansión'), 'escansion.xlsx'));
-$('#csv').addEventListener('click', () =>
-  guardar(new Blob([aCSV(filas)], { type: 'text/csv;charset=utf-8' }), 'escansion.csv'));
+async function recibir(ficheros) {
+  if (!ficheros.length) return;
+  señal.trabajando(true);
+  await motor.preparar(estado);
+  await analizarFicheros(ficheros);
+}
+
+$('#ficheros').addEventListener('change', (e) => recibir(e.target.files));
+/** Descarga con acuse de recibo: el navegador no siempre lo da y parece que
+ *  no ha pasado nada. */
+function conAcuse(boton, hacer) {
+  boton.addEventListener('click', () => {
+    hacer();
+    const antes = boton.textContent;
+    boton.textContent = 'descargado ✓';
+    boton.disabled = true;
+    setTimeout(() => { boton.textContent = antes; boton.disabled = false; }, 1600);
+  });
+}
+conAcuse($('#excel'), () => guardar(libro(COLUMNAS, filas, 'Escansión'), 'escansion.xlsx'));
+conAcuse($('#csv'), () => guardar(new Blob([aCSV(filas)], { type: 'text/csv;charset=utf-8' }), 'escansion.csv'));
 
 const zona = $('#zona');
 ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => {
@@ -127,14 +168,13 @@ const zona = $('#zona');
 ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => {
   e.preventDefault(); zona.classList.remove('encima');
 }));
-zona.addEventListener('drop', async (e) => {
-  if (!e.dataTransfer.files.length) return;
-  salida.innerHTML = '<p class="pista">analizando…</p>';
-  await motor.preparar((paso) => estado(paso));
-  await analizarFicheros(e.dataTransfer.files);
-});
+zona.addEventListener('drop', (e) => recibir(e.dataTransfer.files));
 
-estado('preparando el analizador…');
-motor.preparar((paso) => estado(paso))
-  .then(() => estado('analizador listo', true))
-  .catch((e) => estado(`no se pudo cargar: ${e.message}`));
+estado('preparando el analizador');
+señal.trabajando(true);
+motor.preparar(estado)
+  .then(() => { estado('listo', 'listo'); señal.trabajando(false); })
+  .catch((e) => {
+    señal.trabajando(false);
+    estado(`no se pudo cargar: ${e.message}`, 'problema');
+  });

@@ -44,6 +44,7 @@ escribe.
 | `js/tabla.js` | el análisis convertido en filas. Sin DOM, para poder probarlo |
 | `js/xlsx.js` | escribe el `.xlsx` a mano: es un ZIP de XML, y así no hay CDN |
 | `js/tema.js` | claro y oscuro, en las tres páginas |
+| `js/estado.js` | los avisos: qué está cargando, qué se está calculando, qué ha caducado |
 | `css/styles.css` | los estilos, con tema claro y oscuro |
 | `lote.html` | el corpus entero, con exportación a Excel o CSV |
 | `how-it-works.html` | cómo cuenta, cómo elige y qué precisión tiene |

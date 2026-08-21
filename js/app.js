@@ -1,6 +1,7 @@
 // app.js — la página
 import * as motor from './motor.js';
 import * as notacion from './notacion.js';
+import * as señal from './estado.js';
 
 const $ = (sel) => document.querySelector(sel);
 const texto = $('#texto');
@@ -8,10 +9,8 @@ const salida = $('#salida');
 const aviso = $('#aviso');
 const botonAnalizar = $('#analizar');
 
-function estado(mensaje, listo = false) {
-  aviso.innerHTML = `<span class="punto"></span>${mensaje}`;
-  aviso.classList.toggle('listo', listo);
-}
+const estado = señal.crearAviso(aviso);
+const caducidad = señal.vigilarCaducidad(texto, salida, () => analizar());
 
 /** Un solo verso: escansión grande, ficha y las lecturas rivales. */
 async function mostrarVerso(verso) {
@@ -29,6 +28,7 @@ async function mostrarVerso(verso) {
       <h2>otras lecturas posibles</h2>
       ${notacion.alternativas(alts)}
     </section>`;
+  señal.animarEntrada(salida);
 }
 
 /** Un poema: cada verso con su letra de rima, y el resumen. */
@@ -55,18 +55,26 @@ async function mostrarPoema(entrada) {
       ${notacion.poema(versos, rima)}
     </section>`;
   conectarDetalles(versos);
+  señal.animarEntrada(salida);
 }
+
+const ESQUELETO = '<div class="detalle-dentro"><div class="esqueleto">'
+  + '<span></span><span></span><span></span><span></span><span></span></div></div>';
 
 /** Pinchar un verso lo despliega. Se pide al motor la primera vez y se guarda. */
 function conectarDetalles(versos) {
   salida.querySelectorAll('.abrir').forEach((boton) => {
     boton.addEventListener('click', async () => {
+      const linea = boton.closest('.linea');
       const caja = document.getElementById(boton.getAttribute('aria-controls'));
-      const abierto = boton.getAttribute('aria-expanded') === 'true';
+      const abierto = linea.classList.contains('abierta');
+      linea.classList.toggle('abierta', !abierto);
       boton.setAttribute('aria-expanded', String(!abierto));
-      caja.hidden = abierto;
       if (abierto || caja.dataset.cargado) return;
-      caja.innerHTML = '<p class="pista">calculando…</p>';
+
+      // el esqueleto ocupa aproximadamente lo que van a ocupar las alternativas,
+      // para que la altura no dé un salto cuando lleguen
+      caja.innerHTML = ESQUELETO;
       const v = versos[Number(boton.dataset.verso)];
       try {
         // se dibuja la escansión que decidió el poema, no la del verso suelto,
@@ -74,29 +82,49 @@ function conectarDetalles(versos) {
         caja.innerHTML = notacion.detalle(v, await motor.alternativas(v.verso));
         caja.dataset.cargado = '1';
       } catch (e) {
-        caja.innerHTML = `<p class="pista">no se ha podido calcular: ${e.message}</p>`;
+        caja.innerHTML = `<div class="detalle-dentro"><p class="pista">no se ha podido calcular: ${e.message}</p></div>`;
       }
     });
   });
 }
 
+let enCurso = 0;
+
 async function analizar() {
   const entrada = texto.value.trim();
-  if (!entrada) return;
+  if (!entrada) { texto.focus(); return; }
+
+  // cada análisis lleva número: si se lanzan dos seguidos, el primero en volver
+  // no debe pintar encima del segundo
+  const mio = ++enCurso;
   botonAnalizar.disabled = true;
+  botonAnalizar.dataset.trabajando = '1';
+  señal.trabajando(true);
+  // el resultado anterior no se borra: se atenúa. Borrarlo deja la pantalla en
+  // blanco justo cuando hace falta algo con lo que comparar
+  salida.classList.add('atenuado');
   guardarEnlace(entrada);
-  salida.innerHTML = '<p class="pista">analizando…</p>';
+
   try {
-    await motor.preparar((paso) => estado(paso));
-    estado('analizador listo', true);
+    await motor.preparar(estado);
+    if (mio !== enCurso) return;
+    estado('listo', 'listo');
     const versos = entrada.split('\n').filter((l) => l.trim());
     if (versos.length === 1) await mostrarVerso(versos[0]);
     else await mostrarPoema(entrada);
+    if (mio !== enCurso) return;
+    caducidad.fijar(entrada);
   } catch (e) {
-    salida.innerHTML = `<section class="tarjeta"><h2>no se ha podido analizar</h2>
-      <p class="pista">${String(e.message || e)}</p></section>`;
+    if (mio !== enCurso) return;
+    salida.innerHTML = `<section class="tarjeta problema"><h2>no se ha podido analizar</h2>
+      <p>${String(e.message || e)}</p></section>`;
   } finally {
-    botonAnalizar.disabled = false;
+    if (mio === enCurso) {
+      botonAnalizar.disabled = false;
+      delete botonAnalizar.dataset.trabajando;
+      señal.trabajando(false);
+      salida.classList.remove('atenuado');
+    }
   }
 }
 
@@ -127,12 +155,17 @@ function guardarEnlace(entrada) {
 
 // el intérprete se va cargando mientras se escribe, para que el primer
 // análisis no tenga que esperar a la descarga entera
-estado('preparando el analizador…');
+estado('preparando el analizador');
+señal.trabajando(true);
 const inicial = delEnlace();
 if (inicial) texto.value = inicial;
-motor.preparar((paso) => estado(paso))
+motor.preparar(estado)
   .then(() => {
-    estado('analizador listo', true);
+    estado('listo', 'listo');
+    señal.trabajando(false);
     if (inicial) analizar();
   })
-  .catch((e) => estado(`no se pudo cargar: ${e.message}`));
+  .catch((e) => {
+    señal.trabajando(false);
+    estado(`no se pudo cargar: ${e.message}`, 'problema');
+  });

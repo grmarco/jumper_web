@@ -103,6 +103,10 @@ export function alternativas(lista) {
  *  Cada verso es un botón que se despliega: los detalles y las lecturas rivales
  *  se piden al motor cuando hace falta y no antes. Calcularlas para un poema
  *  entero por si acaso cuesta mucho más de lo que se aprovecha.
+ *
+ *  El panel plegado no lleva `hidden`: ganaría a la animación de altura. Ya
+ *  mide cero y no tiene nada enfocable dentro, y el estado lo dice
+ *  `aria-expanded` en el botón.
  */
 export function poema(versos, rima) {
   const esquema = (rima && rima.esquema) || '';
@@ -120,7 +124,7 @@ export function poema(versos, rima) {
         <span class="medida cifra">${v.medida}</span>
         <span class="chevron" aria-hidden="true"></span>
       </button>
-      <div class="detalle" id="detalle-${i}" hidden></div>
+      <div class="detalle" id="detalle-${i}"></div>
     </li>`;
   });
   return `<ol class="poema">${filas.join('')}</ol>`;

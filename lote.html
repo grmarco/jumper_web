@@ -12,18 +12,22 @@
 <script type="module" src="js/tema.js"></script>
 </head>
 <body>
-<div class="envoltorio">
-
-  <nav class="navegacion">
-    <a class="marca-mini" href="index.html">Jumper</a>
+<nav class="navegacion" aria-label="Principal">
+  <div class="navegacion-dentro">
+    <a class="marca-mini" href="index.html"><span class="pip" aria-hidden="true"></span>Jumper</a>
     <ul>
       <li><a href="index.html">Escandir</a></li>
       <li><a href="lote.html" aria-current="page">Por lotes</a></li>
       <li><a href="how-it-works.html">Cómo funciona</a></li>
     </ul>
     <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
-            aria-label="Cambiar entre claro y oscuro">◐</button>
-  </nav>
+            aria-label="Cambiar entre claro y oscuro">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 1.8a6.2 6.2 0 010 12.4z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="envoltorio">
   <header class="principal">
     <div class="marca">
       <h1>Por lotes</h1>
@@ -39,6 +43,7 @@
       Se analizan en tu navegador: no se suben a ningún sitio.</span>
       <input type="file" id="ficheros" multiple accept=".txt,text/plain" hidden>
     </label>
+    <div class="progreso" id="progreso" role="status" aria-live="polite" hidden></div>
     <div class="acciones" id="exportacion" hidden>
       <button id="excel">Descargar Excel</button>
       <button id="csv" class="secundario">Descargar CSV</button>
@@ -49,15 +54,36 @@
   <div id="salida"></div>
 
   <footer>
-    <p>El Excel y el CSV llevan una fila por verso, con las mismas once
-    columnas: obra, número, verso, medida, acentos, tipo, licencias métricas,
-    letra de rima, si es consonante o asonante, la terminación rimante y la
-    forma estrófica de la obra.</p>
-    <p class="firma">
-      <a href="https://sites.google.com/view/nlp-uned/home"><img src="assets/logo_uni.png" alt="UNED" height="34"></a>
+    <div class="pie-rejilla">
+      <div class="pie-bloque">
+        <h2>Jumper</h2>
+        <p>Escansión automática de poesía española. Cuenta las sílabas métricas,
+        sitúa los acentos, nombra el tipo de verso y reconoce la rima.</p>
+      </div>
+      <div class="pie-bloque">
+        <h2>El análisis</h2>
+        <p>Lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>, el
+        mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
+        compilado a WebAssembly. No hay una segunda implementación que pueda
+        divergir, y nada de lo que escribas sale de tu navegador.</p>
+      </div>
+      <div class="pie-bloque">
+        <h2>Cita</h2>
+        <p class="cita">Marco Remón, G., y Gonzalo, J. (2021). Escansión
+        automática de poesía española sin silabación. <i>Procesamiento del
+        Lenguaje Natural</i>, 66, 77–87.</p>
+        <p class="enlaces">
+          <a href="https://github.com/grmarco/jumper">motor</a>
+          <a href="https://github.com/grmarco/jumper_web">web</a>
+          <a href="how-it-works.html">método</a>
+        </p>
+      </div>
+    </div>
+    <div class="pie-firma">
+      <a href="https://sites.google.com/view/nlp-uned/home"><img src="assets/logo_uni.png" alt="UNED" height="30"></a>
       <span>Grupo de Procesamiento del Lenguaje Natural y Recuperación de
-      Información de la UNED. <a href="https://github.com/grmarco/jumper_web">código</a></span>
-    </p>
+      Información de la UNED</span>
+    </div>
   </footer>
 
 </div>
