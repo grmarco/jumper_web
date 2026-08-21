@@ -57,6 +57,11 @@ Además, `.github/workflows/motor.yml` trae `jumper.py` del repositorio del moto
 cada semana y abre un pull request si ha cambiado, sin fundirlo si la
 conformidad falla.
 
+## Despliegue
+
+GitHub Pages publica `main` tal cual. No hay compilación: son ficheros estáticos
+y un intérprete de Python que se descarga en el navegador.
+
 ## Servir en local
 
 ```bash
