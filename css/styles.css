@@ -150,12 +150,12 @@ button:disabled{opacity:.5;cursor:progress}
 /* ---------- el verso escandido ---------- */
 span.verso{display:flex}
 .verso{
-  display:flex;flex-wrap:wrap;align-items:flex-end;row-gap:.9rem;
+  display:flex;flex-wrap:wrap;align-items:flex-end;row-gap:.55rem;
   font-family:Newsreader,Georgia,serif;font-size:1.5rem;line-height:1;
   padding:1.1rem 0 .3rem;
 }
 .sil{
-  position:relative;display:inline-block;padding:.6rem .18rem 1.15rem;
+  position:relative;display:inline-block;padding:.55rem .18rem .95rem;
   border-left:1px solid var(--linea-suave);
 }
 .sil:first-child{border-left:none}
@@ -170,10 +170,15 @@ span.verso{display:flex}
   font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.62rem;
   color:var(--tinta-tenue);font-variant-numeric:tabular-nums;
 }
-.arco{position:absolute;left:.06rem;right:.06rem;height:.42rem;overflow:visible}
-.arco path{fill:none;stroke:var(--arco);stroke-width:2.2;vector-effect:non-scaling-stroke}
-.arco-abajo{bottom:.7rem}
-.arco-arriba{top:.1rem}
+/* La ligadura va DENTRO del flujo del texto, con tamaño fijo en em: cae entre
+   las dos vocales que se funden y no puede descuadrarse. El arco que había
+   antes se estiraba sobre la sílaba entera, que puede ser muy ancha. */
+.liga{
+  display:inline-block;width:.62em;height:.3em;margin:0 .01em;
+  vertical-align:-.06em;overflow:visible;
+}
+.liga path{fill:none;stroke:var(--arco);stroke-width:1.6;stroke-linecap:round}
+.sil.con-sinalefa .txt,.sil.con-sineresis .txt{white-space:nowrap}
 .sil.con-dieresis .txt{border-bottom:2px dotted var(--arco)}
 .cesura{
   align-self:center;margin:0 .45rem;flex:none;
@@ -262,16 +267,14 @@ span.verso{display:flex}
 .abrir:active .verso{transform:scale(.995)}
 .abrir .verso{transition:transform .1s}
 
-.linea .verso{font-size:1.18rem;padding:.55rem 0 .2rem;flex:1;row-gap:.75rem}
-.linea .sil{padding:.45rem .16rem .6rem}
+.linea .verso{font-size:1.18rem;padding:.5rem 0 .2rem;flex:1;row-gap:.5rem}
+.linea .sil{padding:.4rem .16rem .4rem}
 /* la numeración de sílabas sólo aparece al desplegar: plegado no cabe, y es
    parte de lo que se gana al abrir */
 .linea .sil .num{display:none}
-.linea .arco-abajo{bottom:.14rem}
 .linea.abierta .sil .num{display:block}
-.linea.abierta .sil{padding-bottom:1.15rem}
-.linea.abierta .arco-abajo{bottom:.68rem}
-.linea.abierta .verso{padding-bottom:.4rem;row-gap:1rem}
+.linea.abierta .sil{padding-bottom:.9rem}
+.linea.abierta .verso{padding-bottom:.4rem;row-gap:.75rem}
 
 .chevron{
   flex:none;width:.5rem;height:.5rem;margin-right:.15rem;
@@ -322,7 +325,8 @@ span.verso{display:flex}
 .leyenda{display:flex;gap:1.4rem;flex-wrap:wrap;font-size:.82rem;color:var(--tinta-suave);
   border-top:1px solid var(--linea);margin-top:2rem;padding-top:1rem}
 .leyenda span{display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
-.leyenda .muestra{font-family:Newsreader,Georgia,serif;font-size:1.05rem;color:var(--tinta)}
+.leyenda .muestra{font-family:Newsreader,Georgia,serif;font-size:1.15rem;color:var(--tinta)}
+.leyenda .muestra.con-dieresis{border-bottom:2px dotted var(--arco)}
 
 /* ---------- pie ---------- */
 footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
@@ -366,12 +370,12 @@ footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
   h1{font-size:2.1rem}
   .lema{font-size:.95rem}
 
-  .verso{font-size:1.2rem;row-gap:1.1rem}
-  .sil{padding:.55rem .14rem 1.05rem}
+  .verso{font-size:1.2rem;row-gap:.6rem}
+  .sil{padding:.5rem .14rem .9rem}
   .cesura{margin:0 .3rem}
 
   .abrir{gap:.55rem;flex-wrap:wrap;padding:.5rem .4rem}
-  .linea .verso{font-size:1.1rem;flex:1 0 100%;order:3;row-gap:1rem;padding:.1rem 0 .3rem}
+  .linea .verso{font-size:1.1rem;flex:1 0 100%;order:3;row-gap:.55rem;padding:.1rem 0 .3rem}
   .linea .rima{width:auto;min-width:1.1rem;text-align:left}
   .linea .medida{width:auto;text-align:left}
   .linea .medida::after{content:' sílabas';color:var(--tinta-tenue)}
@@ -409,6 +413,7 @@ footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
   letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-tenue);
 }
 .doc td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:right;padding-right:0}
+.doc .con-dieresis{border-bottom:2px dotted var(--arco)}
 .doc code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em;color:var(--tinta)}
 .doc .fuente{font-size:.82rem;color:var(--tinta-tenue)}
 .migas{
@@ -541,4 +546,46 @@ button.secundario[data-trabajando]::after{
 }
 .detalle-progreso .nombre{
   flex:1;color:var(--tinta-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---------- rima ----------
+   El esquema pone una letra al margen y ya está. Estos dos bloques dicen de
+   dónde sale esa letra: en qué rima el grupo, y con qué palabras. */
+.rima-detalle{margin-top:.2rem}
+.rima-detalle .con-quien{
+  margin:.5rem 0 0;font-size:.86rem;color:var(--tinta-suave);
+}
+.rima-detalle .con-quien b{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;color:var(--tinta);
+}
+.palabra-rima{font-family:Newsreader,Georgia,serif;font-size:1.1rem}
+.terminacion{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--tinta-suave);
+}
+/* la que manda en este poema: el esquema se ha resuelto por ella */
+.terminacion.manda{color:var(--tonica);font-weight:500}
+
+.grupos-rima{list-style:none;margin:.7rem 0 0;padding:0;display:grid;gap:.5rem}
+.grupos-rima li{
+  display:grid;grid-template-columns:1.6rem 5rem 1fr 2rem;gap:.8rem;align-items:baseline;
+  padding-bottom:.5rem;border-bottom:1px solid var(--linea-suave);
+}
+.grupos-rima li:last-child{border-bottom:none;padding-bottom:0}
+.grupos-rima .letra{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.9rem;font-weight:600;
+  text-align:center;
+}
+.grupos-rima .letra.consonante{color:var(--tonica)}
+.grupos-rima .letra.asonante{color:var(--atona)}
+.grupos-rima .palabras{
+  font-family:Newsreader,Georgia,serif;font-size:1rem;color:var(--tinta-suave);
+  line-height:1.4;
+}
+.grupos-rima .cuantos{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.75rem;
+  color:var(--tinta-tenue);text-align:right;font-variant-numeric:tabular-nums;
+}
+@media (max-width:640px){
+  .grupos-rima li{grid-template-columns:1.4rem 4.4rem 1fr;gap:.5rem}
+  .grupos-rima .cuantos{display:none}
 }

@@ -1,14 +1,20 @@
 // notacion.js — dibuja la escansión como se dibuja en un manual
 //
 // Nada de la notación interna del motor (~ para diéresis, # para sinéresis)
-// llega a la pantalla. Lo que se ve es lo que un filólogo espera: el arco de
-// sinalefa bajo las vocales que se funden, el de sinéresis sobre ellas, la
-// diéresis escrita sobre la vocal débil, el acento sobre la sílaba tónica y la
-// cesura marcada. Los arcos van en SVG y no como caracteres combinantes,
-// cuyo soporte tipográfico es irregular.
+// llega a la pantalla. Lo que se ve es lo que un filólogo espera: la ligadura
+// entre las vocales que se funden, la diéresis escrita sobre la vocal débil, el
+// acento sobre la sílaba tónica y la cesura marcada.
+//
+// La ligadura sustituye al arco que había antes. El arco se estiraba sobre la
+// sílaba entera con preserveAspectRatio="none", y una sílaba fundida puede ser
+// muy ancha —«que aho» son seis letras—: el arco salía largo y plano y no
+// señalaba las dos vocales, que es lo único que importa. Ahora el motor dice en
+// qué punto exacto del texto se juntan (`uniones`) y ahí va una ligadura de
+// tamaño fijo, dentro del flujo del texto. Al no estar posicionada de forma
+// absoluta ni estirarse, no se puede descuadrar.
 
-const ARCO_ABAJO = '<svg class="arco arco-abajo" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3,1 Q50,15 97,1"/></svg>';
-const ARCO_ARRIBA = '<svg class="arco arco-arriba" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3,11 Q50,-3 97,11"/></svg>';
+const LIGADURA = '<svg class="liga" viewBox="0 0 12 6" aria-hidden="true">'
+  + '<path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>';
 
 const escapar = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -20,6 +26,28 @@ const EXPLICA = {
   dieresis: 'diéresis: un diptongo se deshace y suena en dos sílabas',
 };
 
+/**
+ * El texto de una sílaba con la ligadura puesta en cada punto de fusión.
+ *
+ * En la sinalefa el punto de fusión es el espacio que separaba las dos
+ * palabras, y la ligadura lo sustituye: «la a» se ve como la‿a. En la sinéresis
+ * no hay espacio que quitar y la ligadura se intercala entre las dos vocales.
+ */
+function conLigaduras(silaba) {
+  const texto = silaba.texto;
+  const uniones = silaba.uniones || [];
+  if (!uniones.length) return escapar(texto);
+  let salida = '';
+  let desde = 0;
+  for (const u of uniones) {
+    salida += escapar(texto.slice(desde, u)) + LIGADURA;
+    // el espacio de la sinalefa lo ocupa la ligadura; la sinéresis no tiene
+    // espacio que consumir y el carácter sigue
+    desde = texto[u] === ' ' ? u + 1 : u;
+  }
+  return salida + escapar(texto.slice(desde));
+}
+
 /** Dibuja un verso escandido. Devuelve el HTML. */
 export function verso(analisis, { numeros = true, etiqueta = 'div' } = {}) {
   const partes = analisis.silabas.map((s, i) => {
@@ -30,9 +58,7 @@ export function verso(analisis, { numeros = true, etiqueta = 'div' } = {}) {
     const titulo = lic.map((l) => EXPLICA[l]).filter(Boolean).join(' · ');
     const cesura = analisis.cesura && s.n === analisis.cesura;
     return `<span class="${clases.join(' ')}"${titulo ? ` title="${escapar(titulo)}"` : ''}>`
-      + `<span class="txt">${escapar(s.texto)}</span>`
-      + (lic.includes('sinalefa') ? ARCO_ABAJO : '')
-      + (lic.includes('sineresis') ? ARCO_ARRIBA : '')
+      + `<span class="txt">${conLigaduras(s)}</span>`
       + (numeros ? `<span class="num">${s.n}</span>` : '')
       + '</span>'
       + (cesura ? '<span class="cesura" title="cesura del verso compuesto">‖</span>' : '');
@@ -114,8 +140,13 @@ export function poema(versos, rima) {
     const letra = esquema[i] || '';
     const clase = letra === '-' ? 'suelto'
       : (letra && letra === letra.toLowerCase() ? 'asonante' : 'consonante');
-    const explica = letra === '-' ? 'sin pareja'
-      : (clase === 'asonante' ? 'rima asonante' : 'rima consonante');
+    // la terminación en el título: la letra sola dice que dos versos riman,
+    // no en qué. El detalle lo desarrolla, pero al pasar por encima ya se ve
+    const d = ((rima && rima.versos) || [])[i];
+    const terminacion = d ? (clase === 'asonante' ? d.asonante : d.consonante) : '';
+    const explica = letra === '-'
+      ? `${d ? `«${d.palabra}» ` : ''}no rima con ningún otro verso`
+      : `rima ${clase} en -${terminacion}${d ? `, en «${d.palabra}»` : ''}`;
     return `<li class="linea" data-n="${i + 1}">
       <button class="abrir" type="button" data-verso="${i}" aria-expanded="false"
               aria-controls="detalle-${i}">
@@ -130,14 +161,80 @@ export function poema(versos, rima) {
   return `<ol class="poema">${filas.join('')}</ol>`;
 }
 
+/**
+ * La rima de un verso, dicha entera.
+ *
+ * El esquema pone una letra al margen y ya está; esto dice de dónde sale esa
+ * letra: qué palabra rima, cuál es su terminación consonante y cuál la
+ * asonante, y con qué otros versos comparte una y otra.
+ */
+export function rima(detalle, { letra = '', tipo = '', companeros = [] } = {}) {
+  if (!detalle || !detalle.palabra) return '';
+  const { palabra, consonante, asonante } = detalle;
+  const con = companeros.length
+    ? `<dd class="con-quien">con ${companeros.length === 1 ? 'el verso' : 'los versos'} `
+      + companeros.map((n) => `<b>${n}</b>`).join(', ') + '</dd>'
+    : '<dd class="con-quien">no rima con ningún otro verso de este poema</dd>';
+  return `<div class="rima-detalle">
+    <h3 class="sub">rima</h3>
+    <dl class="ficha">
+      <div><dt>palabra</dt><dd class="palabra-rima">${escapar(palabra)}</dd></div>
+      <div><dt>consonante</dt><dd class="terminacion${tipo === 'consonante' ? ' manda' : ''}">-${escapar(consonante || '—')}</dd></div>
+      <div><dt>asonante</dt><dd class="terminacion${tipo === 'asonante' ? ' manda' : ''}">-${escapar(asonante || '—')}</dd></div>
+      ${letra && letra !== '-' ? `<div><dt>grupo</dt><dd class="cifra">${escapar(letra)}</dd></div>` : ''}
+    </dl>
+    ${con}
+  </div>`;
+}
+
+/**
+ * Los grupos de rima del poema: qué letra, qué terminación y con qué palabras.
+ *
+ * Es la lectura que el esquema por sí solo no da. «ABBA» dice que el primero y
+ * el cuarto riman; no dice en qué.
+ */
+export function gruposDeRima(rimaPoema) {
+  const esquema = (rimaPoema && rimaPoema.esquema) || '';
+  const detalles = (rimaPoema && rimaPoema.versos) || [];
+  if (!esquema) return '';
+  const asonante = esquema.replace(/-/g, '') === esquema.replace(/-/g, '').toLowerCase();
+  const clave = asonante ? 'asonante' : 'consonante';
+
+  const grupos = new Map();
+  [...esquema].forEach((letra, i) => {
+    if (letra === '-') return;
+    if (!grupos.has(letra)) grupos.set(letra, { versos: [], palabras: [], rima: '' });
+    const g = grupos.get(letra);
+    g.versos.push(i + 1);
+    if (detalles[i]) {
+      g.palabras.push(detalles[i].palabra);
+      g.rima = g.rima || detalles[i][clave];
+    }
+  });
+  const sueltos = [...esquema].map((l, i) => (l === '-' ? i + 1 : 0)).filter(Boolean);
+  if (!grupos.size) return '';
+
+  const filas = [...grupos].map(([letra, g]) => `<li>
+    <span class="letra ${clave}">${escapar(letra)}</span>
+    <span class="terminacion">-${escapar(g.rima || '—')}</span>
+    <span class="palabras">${g.palabras.map(escapar).join(' · ')}</span>
+    <span class="cuantos">${g.versos.length}</span>
+  </li>`).join('');
+  const cola = sueltos.length
+    ? `<p class="fuente">${sueltos.length === 1 ? 'Queda suelto el verso' : 'Quedan sueltos los versos'}
+       ${sueltos.join(', ')}.</p>` : '';
+  return `<ul class="grupos-rima">${filas}</ul>${cola}`;
+}
+
 /** Lo que se despliega al pinchar un verso del poema.
  *
  *  Sin repetir el verso: el de la fila de arriba es el mismo, y al desplegarse
  *  aparece además su numeración de sílabas, que plegado no cabe.
  */
-export function detalle(analisis, alts) {
+export function detalle(analisis, alts, rimaDelVerso = null) {
   return `<div class="detalle-dentro">
     ${ficha(analisis)}
+    ${rimaDelVerso ? rima(rimaDelVerso.detalle, rimaDelVerso) : ''}
     <h3 class="sub">otras lecturas posibles</h3>
     ${alternativas(alts)}
   </div>`;

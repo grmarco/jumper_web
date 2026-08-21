@@ -2265,7 +2265,7 @@ def silabas_del_verso(verso):
 
     Devuelve la división real del verso —la que produce la medida— con el texto
     tal cual lo escribió el autor y, en cada sílaba, qué licencia métrica la
-    afecta. Es lo que hace falta para dibujar la escansión como se dibuja en un
+    afecta y en qué punto exacto de su texto se produce la fusión. Es lo que hace falta para dibujar la escansión como se dibuja en un
     manual: el arco de sinalefa bajo las vocales que se funden, la diéresis sobre
     la vocal débil, la cesura en su sitio.
 
@@ -2277,9 +2277,13 @@ def silabas_del_verso(verso):
             verso (str): el verso tal cual
         Returns:
             dict: con `silabas` (lista), `medida`, `acentos`, `tipo` y `cesura`.
-            Cada sílaba trae `texto`, `n`, `tonica` y `licencia`, que vale
-            'sinalefa' cuando une dos palabras, 'sineresis' cuando funde dos
-            vocales de una misma, 'dieresis' cuando parte un diptongo, o None.
+            Cada sílaba trae `texto`, `n`, `tonica`, `licencias` —'sinalefa'
+            cuando une dos palabras, 'sineresis' cuando funde dos vocales de una
+            misma, 'dieresis' cuando parte un diptongo— y `uniones`, los índices
+            dentro de `texto` donde se juntan las vocales que se funden.
+            `uniones` es lo que permite marcar la fusión en su sitio en vez de
+            sobre la sílaba entera: una sílaba fundida puede ser ancha, y una
+            marca estirada sobre toda ella no señala nada.
     """
     return _dibujar(verso, escandir_verso(verso))
 
@@ -2331,6 +2335,7 @@ def _dibujar(verso, escansion):
     for i, (palabra, corte_sineresis, dieresis) in enumerate(unidades):
         trozos = _silabas_con_puntuacion(palabra)
         marca_en = None
+        union_sineresis = None
         if corte_sineresis >= 0 and len(trozos) >= 2:
             # la sinéresis funde en una las dos sílabas que la marca separa
             acumulado = 0
@@ -2339,13 +2344,18 @@ def _dibujar(verso, escansion):
                 if acumulado >= corte_sineresis:
                     break
             if k + 1 < len(trozos):
+                # dónde, dentro del texto de la sílaba resultante, quedan pegadas
+                # las dos que eran: es el punto que hay que marcar al dibujar
+                union_sineresis = len(trozos[k])
                 trozos = trozos[:k] + [trozos[k] + trozos[k + 1]] + trozos[k + 2:]
                 marca_en = k
         for k, tr in enumerate(trozos):
             lic = ['sineresis'] if k == marca_en else []
+            uniones = [union_sineresis] if k == marca_en else []
             if dieresis and any(c in 'ïüäëö' for c in tr):
                 lic.append('dieresis')
-            silabas.append({'texto': tr, 'palabra': i, 'licencias': lic})
+            silabas.append({'texto': tr, 'palabra': i, 'licencias': lic,
+                            'uniones': uniones})
         # sinalefa con la siguiente, salvo que haya dialefa o sea la última
         if i < len(unidades) - 1 and i not in dialefa_tras:
             silabas[-1]['une_con_siguiente'] = True
@@ -2366,8 +2376,13 @@ def _dibujar(verso, escansion):
         if previa and previa.get('une_con_siguiente') and izquierda and derecha and \
                 termina_por_vocal(izquierda) and empieza_por_vocal(derecha) and \
                 not yeye(derecha):
+            # el punto de contacto es justo el espacio que separa las dos
+            # palabras dentro de la sílaba fundida
+            union = len(previa['texto'])
             previa['texto'] += ' ' + s['texto']
             previa['licencias'] = previa['licencias'] + ['sinalefa'] + s['licencias']
+            previa['uniones'] = previa['uniones'] + [union] + \
+                [u + union + 1 for u in s['uniones']]
             previa['une_con_siguiente'] = s.get('une_con_siguiente', False)
         else:
             fundidas.append(s)

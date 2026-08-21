@@ -12,17 +12,24 @@ const botonAnalizar = $('#analizar');
 const estado = señal.crearAviso(aviso);
 const caducidad = señal.vigilarCaducidad(texto, salida, () => analizar());
 
-/** Un solo verso: escansión grande, ficha y las lecturas rivales. */
+/** Un solo verso: escansión grande, ficha, rima y las lecturas rivales. */
 async function mostrarVerso(verso) {
-  const [analisis, alts] = await Promise.all([
+  const [analisis, alts, suRima] = await Promise.all([
     motor.escandirVerso(verso),
     motor.alternativas(verso),
+    motor.rimaDelVerso(verso),
   ]);
+  // un verso solo no tiene con quién rimar, pero sí tiene rima: su terminación
+  // consonante y su asonante son las que decidirían el esquema
+  const detalleRima = suRima.palabra
+    ? { palabra: suRima.palabra, consonante: suRima.rima[0], asonante: suRima.rima[1] }
+    : null;
   salida.innerHTML = `
     <section class="tarjeta">
       <h2>escansión</h2>
       ${notacion.verso(analisis)}
       ${notacion.ficha(analisis)}
+      ${notacion.rima(detalleRima)}
     </section>
     <section class="tarjeta">
       <h2>otras lecturas posibles</h2>
@@ -43,26 +50,52 @@ async function mostrarPoema(entrada) {
   // el nombre de la forma sólo aparece si el algoritmo la ha reconocido;
   // no se adivina desde la web
   const forma = rima.forma ? `<span><b>${rima.forma}</b></span>` : '';
+  const grupos = notacion.gruposDeRima(rima);
   salida.innerHTML = `
     <section class="tarjeta">
       <h2>${total} versos</h2>
       <div class="resumen">${forma}${resumen}${esquema}</div>
     </section>
+    ${grupos ? `<section class="tarjeta">
+      <h2>grupos de rima</h2>
+      <p class="pista">El esquema dice qué versos riman; esto dice en qué.</p>
+      ${grupos}
+    </section>` : ''}
     <section class="tarjeta">
       <h2>escansión y rima</h2>
       <p class="pista">Pincha en un verso para ver su escansión en detalle y las
       demás lecturas que el algoritmo consideró.</p>
       ${notacion.poema(versos, rima)}
     </section>`;
-  conectarDetalles(versos);
+  conectarDetalles(versos, rima);
   señal.animarEntrada(salida);
 }
 
 const ESQUELETO = '<div class="detalle-dentro"><div class="esqueleto">'
   + '<span></span><span></span><span></span><span></span><span></span></div></div>';
 
+/** Con qué otros versos del poema comparte grupo, y con qué letra. */
+function suRimaEnElPoema(rima, i) {
+  const esquema = (rima && rima.esquema) || '';
+  const letra = esquema[i] || '';
+  const detalles = (rima && rima.versos) || [];
+  if (!detalles[i]) return null;
+  const companeros = letra && letra !== '-'
+    ? [...esquema].map((l, j) => (l === letra && j !== i ? j + 1 : 0)).filter(Boolean)
+    : [];
+  const sinGuiones = esquema.replace(/-/g, '');
+  return {
+    detalle: detalles[i],
+    letra,
+    tipo: letra && letra !== '-'
+      ? (sinGuiones === sinGuiones.toLowerCase() ? 'asonante' : 'consonante')
+      : '',
+    companeros,
+  };
+}
+
 /** Pinchar un verso lo despliega. Se pide al motor la primera vez y se guarda. */
-function conectarDetalles(versos) {
+function conectarDetalles(versos, rima) {
   salida.querySelectorAll('.abrir').forEach((boton) => {
     boton.addEventListener('click', async () => {
       const linea = boton.closest('.linea');
@@ -79,7 +112,8 @@ function conectarDetalles(versos) {
       try {
         // se dibuja la escansión que decidió el poema, no la del verso suelto,
         // y junto a ella las lecturas rivales que se descartaron
-        caja.innerHTML = notacion.detalle(v, await motor.alternativas(v.verso));
+        caja.innerHTML = notacion.detalle(v, await motor.alternativas(v.verso),
+                                          suRimaEnElPoema(rima, Number(boton.dataset.verso)));
         caja.dataset.cargado = '1';
       } catch (e) {
         caja.innerHTML = `<div class="detalle-dentro"><p class="pista">no se ha podido calcular: ${e.message}</p></div>`;

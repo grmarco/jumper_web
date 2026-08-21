@@ -5,8 +5,14 @@ Escansión de poesía española en el navegador: **https://grmarco.github.io/jum
 Pega un poema y devuelve, verso a verso, la medida, los acentos, el tipo de
 verso y el esquema de rima, con las sinalefas, sinéresis y diéresis dibujadas
 como se dibujan en un manual y la cesura en su sitio. **Pincha en cualquier
-verso** y se despliegan su numeración de sílabas, su ficha y las demás lecturas
-que el algoritmo consideró, con la puntuación de cada una desglosada.
+verso** y se despliegan su numeración de sílabas, su ficha, su rima —palabra
+rimante, terminación consonante y asonante, y con qué versos comparte grupo— y
+las demás lecturas que el algoritmo consideró, con la puntuación de cada una
+desglosada.
+
+Las fusiones se marcan con una ligadura **entre las dos vocales que se juntan**,
+no con un arco sobre la sílaba: el motor dice en qué punto exacto del texto se
+funden, así que la marca no puede descuadrarse por ancha que sea la sílaba.
 
 En **por lotes** se escande un corpus entero, un fichero por obra, y se descarga
 la tabla en Excel o en CSV con una fila por verso.
@@ -38,7 +44,7 @@ escribe.
 |---|---|
 | `jumper.py` | el motor, traído de `grmarco/jumper`. **No editar aquí** |
 | `js/motor.js` | la fachada: carga Pyodide, mete `jumper.py` dentro y devuelve objetos JS |
-| `js/notacion.js` | dibuja la escansión. Ni `~` ni `#` llegan a la pantalla |
+| `js/notacion.js` | dibuja la escansión y la rima. Ni `~` ni `#` llegan a la pantalla |
 | `js/app.js` | la portada: entrada, resultados, enlace compartible |
 | `js/lote.js` | muchos ficheros a la vez, con su recuento |
 | `js/tabla.js` | el análisis convertido en filas. Sin DOM, para poder probarlo |

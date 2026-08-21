@@ -82,6 +82,14 @@ export const escandirVerso = (verso) =>
 export const alternativas = (verso, maximo = 5) =>
   pedir(`jumper.alternativas(${cita(verso)}, ${maximo})`);
 
+/** Rima consonante y asonante de una palabra: ['erra', 'ea']. */
+export const rimaDe = (palabra) => pedir(`jumper.rima_de(${cita(palabra)})`);
+
+/** La última palabra de un verso, que es la que rima. */
+export const rimaDelVerso = (verso) =>
+  pedir(`(lambda p: {'palabra': p, 'rima': jumper.rima_de(p)})(`
+    + `jumper.quitar_puntuacion(${cita(verso)}).strip().split(' ')[-1])`);
+
 /** Escansión y rima de un poema entero, con la forma estrófica si la tiene. */
 export async function analizarPoema(texto) {
   const { versos, rima } = await pedir(`_poema(${cita(texto)})`);
