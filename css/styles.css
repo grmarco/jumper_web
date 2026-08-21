@@ -31,6 +31,9 @@
 }
 
 *{box-sizing:border-box}
+/* `display:flex` en una clase gana a `[hidden]`, que sólo pone `display:none`
+   en la hoja del navegador. Sin esto, ocultar algo por atributo no funciona. */
+[hidden]{display:none !important}
 body{
   margin:0; background:var(--papel); color:var(--tinta);
   font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
@@ -41,11 +44,27 @@ a{color:var(--tonica)}
 :focus-visible{outline:2px solid var(--tonica);outline-offset:3px;border-radius:3px}
 
 /* ---------- cabecera ---------- */
-header.principal{position:relative;border-bottom:1px solid var(--linea);padding-bottom:1.6rem;margin-bottom:2rem}
+header.principal{border-bottom:1px solid var(--linea);padding-bottom:1.6rem;margin-bottom:2rem}
+
+/* ---------- navegación ---------- */
+.navegacion{
+  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
+  padding-bottom:1rem;margin-bottom:1.8rem;border-bottom:1px solid var(--linea);
+}
+.marca-mini{
+  font-family:Newsreader,Georgia,serif;font-size:1.15rem;font-weight:500;
+  color:var(--tinta);text-decoration:none;letter-spacing:-.01em;
+}
+.navegacion ul{display:flex;gap:1.1rem;list-style:none;margin:0;padding:0;flex:1;flex-wrap:wrap}
+.navegacion a:not(.marca-mini){
+  font-size:.88rem;color:var(--tinta-tenue);text-decoration:none;
+  padding:.25rem 0;border-bottom:1.5px solid transparent;
+}
+.navegacion a:hover:not(.marca-mini){color:var(--tinta)}
+.navegacion a[aria-current="page"]{color:var(--tinta);border-bottom-color:var(--tonica)}
 .tema{
-  position:absolute;top:.3rem;right:0;background:transparent;color:var(--tinta-tenue);
-  border:1px solid var(--linea);font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:.68rem;font-weight:400;letter-spacing:.06em;padding:.3rem .6rem;
+  flex:none;background:transparent;color:var(--tinta-tenue);border:1px solid var(--linea);
+  font-size:.9rem;line-height:1;padding:.35rem .5rem;border-radius:4px;
 }
 .tema:hover{color:var(--tinta);border-color:var(--tinta-tenue)}
 .marca{display:flex;align-items:baseline;gap:.9rem;flex-wrap:wrap}
@@ -83,8 +102,9 @@ button:disabled{opacity:.5;cursor:progress}
 .pista{font-size:.82rem;color:var(--tinta-tenue)}
 
 /* ---------- el verso escandido ---------- */
+span.verso{display:flex}
 .verso{
-  display:flex;flex-wrap:wrap;align-items:flex-end;
+  display:flex;flex-wrap:wrap;align-items:flex-end;row-gap:.9rem;
   font-family:Newsreader,Georgia,serif;font-size:1.5rem;line-height:1;
   padding:1.1rem 0 .3rem;
 }
@@ -172,13 +192,39 @@ button:disabled{opacity:.5;cursor:progress}
 .sin-alternativas{font-size:.88rem;color:var(--tinta-tenue);margin:.5rem 0 0}
 
 /* ---------- poema ---------- */
-.poema{list-style:none;margin:0;padding:0}
-.linea{display:flex;align-items:center;gap:.9rem;border-bottom:1px solid var(--linea-suave)}
+.poema{list-style:none;margin:.8rem 0 0;padding:0}
+.linea{border-bottom:1px solid var(--linea-suave)}
 .linea:last-child{border-bottom:none}
-.linea .verso{font-size:1.18rem;padding:.5rem 0 .1rem;flex:1}
-.linea .sil{padding:.4rem .16rem .55rem}
+.abrir{
+  display:flex;align-items:center;gap:.9rem;width:100%;
+  background:transparent;border:none;border-radius:4px;padding:.15rem .3rem;
+  color:inherit;font:inherit;font-weight:400;text-align:left;cursor:pointer;
+}
+.abrir:hover,.abrir[aria-expanded="true"]{background:var(--linea-suave)}
+.linea .verso{font-size:1.18rem;padding:.55rem 0 .2rem;flex:1;row-gap:.75rem}
+.linea .sil{padding:.45rem .16rem .6rem}
+/* la numeración de sílabas sólo aparece al desplegar: plegado no cabe, y es
+   parte de lo que se gana al abrir */
 .linea .sil .num{display:none}
-.linea .arco-abajo{bottom:.1rem}
+.abrir[aria-expanded="true"] .sil .num{display:block}
+.abrir[aria-expanded="true"] .sil{padding-bottom:1.15rem}
+.abrir[aria-expanded="true"] .arco-abajo{bottom:.68rem}
+.abrir[aria-expanded="true"] .verso{padding-bottom:.4rem;row-gap:1rem}
+.linea .arco-abajo{bottom:.14rem}
+.chevron{
+  flex:none;width:.5rem;height:.5rem;margin-right:.15rem;
+  border-right:1.5px solid var(--tinta-tenue);border-bottom:1.5px solid var(--tinta-tenue);
+  transform:rotate(45deg);transition:transform .15s;
+}
+.abrir[aria-expanded="true"] .chevron{transform:rotate(-135deg)}
+@media (prefers-reduced-motion:reduce){.chevron{transition:none}}
+.detalle{padding:.2rem 0 1.3rem 2.4rem}
+.detalle .verso{font-size:1.35rem}
+.detalle .sub{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;font-weight:500;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--tinta-tenue);
+  margin:1.4rem 0 0;
+}
 .rima{
   flex:none;width:1.5rem;text-align:center;
   font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.82rem;font-weight:600;
@@ -202,9 +248,37 @@ footer{border-top:1px solid var(--linea);margin-top:2.5rem;padding-top:1.4rem;
   font-size:.82rem;color:var(--tinta-tenue)}
 footer p{max-width:60ch}
 
+/* ---------- móvil ----------
+   El verso parte en varias filas y hay que verlo: por eso `row-gap`, para que
+   los arcos de una fila no se peguen a las letras de la siguiente, y por eso la
+   letra de rima y la medida se van a su propia línea en vez de quedarse
+   centradas al lado de un bloque de tres filas. */
 @media (max-width:640px){
-  .verso{font-size:1.25rem}
-  .linea{flex-wrap:wrap}
+  body{font-size:16px}
+  .envoltorio{padding-left:1.1rem;padding-right:1.1rem}
+  .navegacion{gap:.8rem 1rem}
+  .navegacion ul{gap:.9rem;order:3;flex:1 0 100%}
+  .marca-mini{flex:1}
+  h1{font-size:2.1rem}
+  .lema{font-size:.95rem}
+
+  .verso{font-size:1.2rem;row-gap:1.1rem}
+  .sil{padding:.55rem .14rem 1.05rem}
+  .cesura{margin:0 .3rem}
+
+  .abrir{gap:.55rem;flex-wrap:wrap;padding:.35rem .2rem}
+  .linea .verso{font-size:1.1rem;flex:1 0 100%;order:3;row-gap:1rem;padding:.1rem 0 .3rem}
+  .linea .rima{width:auto;min-width:1.1rem;text-align:left}
+  .linea .medida{width:auto;text-align:left}
+  .linea .medida::after{content:' sílabas';color:var(--tinta-tenue)}
+  .chevron{margin-left:auto}
+  .detalle{padding-left:.2rem}
+
+  .ficha{gap:.6rem 1.4rem}
+  .alternativa .cabeza{gap:.5rem}
+  .reparto li{grid-template-columns:1fr 3.5rem 2.2rem 3rem;gap:.4rem}
+  .leyenda{gap:.7rem 1.2rem}
+  .tabla{font-size:.78rem}
 }
 
 /* ---------- páginas de texto ---------- */

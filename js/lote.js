@@ -6,7 +6,8 @@
 // hacía falta para volcar una tabla.
 
 import * as motor from './motor.js';
-import { filasDePoema, resumenDe, aCSV } from './tabla.js';
+import { filasDePoema, resumenDe, aCSV, COLUMNAS } from './tabla.js';
+import { libro } from './xlsx.js';
 
 const $ = (sel) => document.querySelector(sel);
 const salida = $('#salida');
@@ -78,16 +79,18 @@ function muestra() {
     <tbody>${cuerpo}</tbody></table>${cola}</section>`;
 }
 
-function descargar() {
-  const url = URL.createObjectURL(new Blob([aCSV(filas)], { type: 'text/csv;charset=utf-8' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: 'escansion.csv' });
+function guardar(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
+  document.body.append(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 }
 
 async function analizarFicheros(ficheros) {
   filas = [];
-  $('#exportar').hidden = true;
+  $('#exportacion').hidden = true;
   const obras = [];
   for (const [i, f] of [...ficheros].entries()) {
     estado(`analizando ${i + 1} de ${ficheros.length}: ${f.name}`);
@@ -102,7 +105,7 @@ async function analizarFicheros(ficheros) {
     return;
   }
   salida.innerHTML = resumen(obras) + muestra();
-  $('#exportar').hidden = false;
+  $('#exportacion').hidden = false;
   estado(`${filas.length} versos analizados`, true);
 }
 
@@ -112,7 +115,10 @@ $('#ficheros').addEventListener('change', async (e) => {
   await motor.preparar((paso) => estado(paso));
   await analizarFicheros(e.target.files);
 });
-$('#exportar').addEventListener('click', descargar);
+$('#excel').addEventListener('click', () =>
+  guardar(libro(COLUMNAS, filas, 'Escansión'), 'escansion.xlsx'));
+$('#csv').addEventListener('click', () =>
+  guardar(new Blob([aCSV(filas)], { type: 'text/csv;charset=utf-8' }), 'escansion.csv'));
 
 const zona = $('#zona');
 ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => {
@@ -127,9 +133,6 @@ zona.addEventListener('drop', async (e) => {
   await motor.preparar((paso) => estado(paso));
   await analizarFicheros(e.dataTransfer.files);
 });
-
-const temaGuardado = localStorage.getItem('tema');
-if (temaGuardado) document.documentElement.dataset.tema = temaGuardado;
 
 estado('preparando el analizador…');
 motor.preparar((paso) => estado(paso))

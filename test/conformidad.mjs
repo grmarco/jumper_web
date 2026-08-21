@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as motor from '../js/motor.js';
 import { filasDePoema, aCSV, resumenDe, COLUMNAS } from '../js/tabla.js';
+import { libro } from '../js/xlsx.js';
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -105,7 +106,19 @@ comparar('cabecera del CSV', lineas[0], '\ufeff' + COLUMNAS.join(','));
 const conComillas = aCSV([{ ...filas[0], verso: 'dijo «no», y "calló"' }]);
 comparar('comillas escapadas', conComillas.includes('""calló""'), true);
 
+// El .xlsx que se escribe a mano: que sea un ZIP con las cinco partes que Excel
+// espera, y que los versos con & < > no rompan el XML.
+const xlsx = new Uint8Array(await libro(COLUMNAS,
+  [...filas, { ...filas[0], verso: 'signos & raros <sueltos>' }], 'Escansión').arrayBuffer());
+comparar('firma del ZIP', [...xlsx.slice(0, 4)], [0x50, 0x4B, 0x03, 0x04]);
+// latin1 para poder buscar los nombres de las entradas del ZIP tal cual
+const dentro = new TextDecoder('latin1').decode(xlsx);
+for (const parte of ['[Content_Types].xml', 'xl/workbook.xml', 'xl/worksheets/sheet1.xml',
+                     'xl/_rels/workbook.xml.rels', '_rels/.rels'])
+  comparar(`el xlsx trae ${parte}`, dentro.includes(parte), true);
+comparar('XML escapado en el xlsx', dentro.includes('signos &amp; raros &lt;sueltos&gt;'), true);
+
 console.log(fallos.length
   ? `\n${fallos.length} comprobación(es) fallida(s): ${fallos.join(', ')}`
-  : `\n${VERSOS.length * 2 + 8} comprobaciones, ninguna diferencia.`);
+  : `\n${VERSOS.length * 2 + 15} comprobaciones, ninguna diferencia.`);
 process.exit(fallos.length ? 1 : 0);

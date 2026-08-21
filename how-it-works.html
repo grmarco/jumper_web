@@ -9,12 +9,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/styles.css">
+<script type="module" src="js/tema.js"></script>
 </head>
 <body>
 <div class="envoltorio">
 
-  <p class="migas"><a href="index.html">← Jumper</a></p>
-
+  <nav class="navegacion">
+    <a class="marca-mini" href="index.html">Jumper</a>
+    <ul>
+      <li><a href="index.html">Escandir</a></li>
+      <li><a href="lote.html">Por lotes</a></li>
+      <li><a href="how-it-works.html" aria-current="page">Cómo funciona</a></li>
+    </ul>
+    <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
+            aria-label="Cambiar entre claro y oscuro">◐</button>
+  </nav>
   <header class="principal">
     <div class="marca">
       <h1>Cómo funciona</h1>
@@ -96,11 +105,12 @@
     <h2>Por qué ésta y no otra</h2>
 
     <p>Como la puntuación es una suma de términos con significado, se puede
-    enseñar. Al analizar un verso suelto, la página muestra las demás lecturas
-    ordenadas por verosimilitud, cada una con su cuenta desglosada y con el
-    contexto de cada licencia dicho en castellano. Y cuando la diferencia entre
-    la primera y la segunda es pequeña, lo dice: un verso genuinamente ambiguo
-    debe presentarse como ambiguo y no como resuelto.</p>
+    enseñar. Pincha en cualquier verso —analizado solo o dentro de un poema— y
+    aparecen su numeración de sílabas y las demás lecturas ordenadas por
+    verosimilitud, cada una con su cuenta desglosada y con el contexto de cada
+    licencia dicho en castellano. Y cuando la diferencia entre la primera y la
+    segunda es pequeña, lo dice: un verso genuinamente ambiguo debe presentarse
+    como ambiguo y no como resuelto.</p>
 
     <h2>La rima</h2>
 
@@ -139,6 +149,11 @@
 
     <p class="fuente">Sobre las particiones que no se han usado para medir nada:
     ADSO 0,9587 y Carvajal 0,8460.</p>
+
+    <p>En <a href="lote.html">por lotes</a> se puede escandir un corpus entero
+    —un fichero por obra— y descargar la tabla en Excel o en CSV, con una fila
+    por verso. También se analiza en el navegador: los ficheros no se suben a
+    ningún sitio.</p>
 
     <p>Rima, en la poesía completa de Carvajal: 0,712 de esquemas exactos y
     0,8355 de versos con su letra correcta, frente a 0,466 y 0,6090 de

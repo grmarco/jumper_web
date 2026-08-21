@@ -50,8 +50,34 @@ async function mostrarPoema(entrada) {
     </section>
     <section class="tarjeta">
       <h2>escansión y rima</h2>
+      <p class="pista">Pincha en un verso para ver su escansión en detalle y las
+      demás lecturas que el algoritmo consideró.</p>
       ${notacion.poema(versos, rima)}
     </section>`;
+  conectarDetalles(versos);
+}
+
+/** Pinchar un verso lo despliega. Se pide al motor la primera vez y se guarda. */
+function conectarDetalles(versos) {
+  salida.querySelectorAll('.abrir').forEach((boton) => {
+    boton.addEventListener('click', async () => {
+      const caja = document.getElementById(boton.getAttribute('aria-controls'));
+      const abierto = boton.getAttribute('aria-expanded') === 'true';
+      boton.setAttribute('aria-expanded', String(!abierto));
+      caja.hidden = abierto;
+      if (abierto || caja.dataset.cargado) return;
+      caja.innerHTML = '<p class="pista">calculando…</p>';
+      const v = versos[Number(boton.dataset.verso)];
+      try {
+        // se dibuja la escansión que decidió el poema, no la del verso suelto,
+        // y junto a ella las lecturas rivales que se descartaron
+        caja.innerHTML = notacion.detalle(v, await motor.alternativas(v.verso));
+        caja.dataset.cargado = '1';
+      } catch (e) {
+        caja.innerHTML = `<p class="pista">no se ha podido calcular: ${e.message}</p>`;
+      }
+    });
+  });
 }
 
 async function analizar() {
@@ -78,19 +104,6 @@ botonAnalizar.addEventListener('click', analizar);
 texto.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') analizar();
 });
-// El tema sigue al sistema mientras nadie lo toque; en cuanto se elige, la
-// elección manda y se recuerda.
-const temaGuardado = localStorage.getItem('tema');
-if (temaGuardado) document.documentElement.dataset.tema = temaGuardado;
-$('#tema').addEventListener('click', () => {
-  const oscuroAhora = document.documentElement.dataset.tema
-    ? document.documentElement.dataset.tema === 'oscuro'
-    : matchMedia('(prefers-color-scheme: dark)').matches;
-  const elegido = oscuroAhora ? 'claro' : 'oscuro';
-  document.documentElement.dataset.tema = elegido;
-  localStorage.setItem('tema', elegido);
-});
-
 $('#ejemplo').addEventListener('click', () => {
   texto.value = `Cuando la alegre y dulce primavera
 a partir sus riquezas comenzaba,

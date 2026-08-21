@@ -9,12 +9,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/styles.css">
+<script type="module" src="js/tema.js"></script>
 </head>
 <body>
 <div class="envoltorio">
 
-  <p class="migas"><a href="index.html">← Jumper</a></p>
-
+  <nav class="navegacion">
+    <a class="marca-mini" href="index.html">Jumper</a>
+    <ul>
+      <li><a href="index.html">Escandir</a></li>
+      <li><a href="lote.html" aria-current="page">Por lotes</a></li>
+      <li><a href="how-it-works.html">Cómo funciona</a></li>
+    </ul>
+    <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
+            aria-label="Cambiar entre claro y oscuro">◐</button>
+  </nav>
   <header class="principal">
     <div class="marca">
       <h1>Por lotes</h1>
@@ -25,23 +34,25 @@
 
   <section class="entrada">
     <label class="zona" id="zona" for="ficheros">
-      <span class="grande">Arrastra aquí los ficheros de texto</span>
-      <span class="pista">o pulsa para elegirlos. Un fichero por obra, un verso por línea.
+      <span class="grande">Elige tus ficheros de texto</span>
+      <span class="pista">o arrástralos aquí. Un fichero por obra, un verso por línea.
       Se analizan en tu navegador: no se suben a ningún sitio.</span>
       <input type="file" id="ficheros" multiple accept=".txt,text/plain" hidden>
     </label>
-    <div class="acciones">
-      <button id="exportar" hidden>Exportar CSV</button>
+    <div class="acciones" id="exportacion" hidden>
+      <button id="excel">Descargar Excel</button>
+      <button id="csv" class="secundario">Descargar CSV</button>
+      <span class="pista">una fila por verso</span>
     </div>
   </section>
 
   <div id="salida"></div>
 
   <footer>
-    <p><a class="enlace-doc" href="how-it-works.html">Cómo funciona →</a></p>
-    <p>El CSV lleva una fila por verso: obra, número, verso, medida, acentos,
-    tipo, licencias métricas, letra de rima, si es consonante o asonante, la
-    terminación rimante y la forma estrófica de la obra.</p>
+    <p>El Excel y el CSV llevan una fila por verso, con las mismas once
+    columnas: obra, número, verso, medida, acentos, tipo, licencias métricas,
+    letra de rima, si es consonante o asonante, la terminación rimante y la
+    forma estrófica de la obra.</p>
     <p class="firma">
       <a href="https://sites.google.com/view/nlp-uned/home"><img src="assets/logo_uni.png" alt="UNED" height="34"></a>
       <span>Grupo de Procesamiento del Lenguaje Natural y Recuperación de

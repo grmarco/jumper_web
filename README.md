@@ -4,8 +4,12 @@ Escansión de poesía española en el navegador: **https://grmarco.github.io/jum
 
 Pega un poema y devuelve, verso a verso, la medida, los acentos, el tipo de
 verso y el esquema de rima, con las sinalefas, sinéresis y diéresis dibujadas
-como se dibujan en un manual y la cesura en su sitio. De un verso suelto muestra
-además las demás lecturas posibles y por qué se eligió ésta.
+como se dibujan en un manual y la cesura en su sitio. **Pincha en cualquier
+verso** y se despliegan su numeración de sílabas, su ficha y las demás lecturas
+que el algoritmo consideró, con la puntuación de cada una desglosada.
+
+En **por lotes** se escande un corpus entero, un fichero por obra, y se descarga
+la tabla en Excel o en CSV con una fila por verso.
 
 ## El algoritmo no está aquí
 
@@ -35,8 +39,13 @@ escribe.
 | `jumper.py` | el motor, traído de `grmarco/jumper`. **No editar aquí** |
 | `js/motor.js` | la fachada: carga Pyodide, mete `jumper.py` dentro y devuelve objetos JS |
 | `js/notacion.js` | dibuja la escansión. Ni `~` ni `#` llegan a la pantalla |
-| `js/app.js` | la página: entrada, resultados, tema, enlace compartible |
+| `js/app.js` | la portada: entrada, resultados, enlace compartible |
+| `js/lote.js` | muchos ficheros a la vez, con su recuento |
+| `js/tabla.js` | el análisis convertido en filas. Sin DOM, para poder probarlo |
+| `js/xlsx.js` | escribe el `.xlsx` a mano: es un ZIP de XML, y así no hay CDN |
+| `js/tema.js` | claro y oscuro, en las tres páginas |
 | `css/styles.css` | los estilos, con tema claro y oscuro |
+| `lote.html` | el corpus entero, con exportación a Excel o CSV |
 | `how-it-works.html` | cómo cuenta, cómo elige y qué precisión tiene |
 | `test/conformidad.mjs` | la prueba que impide que esto vuelva a divergir |
 

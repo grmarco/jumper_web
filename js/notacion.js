@@ -21,7 +21,7 @@ const EXPLICA = {
 };
 
 /** Dibuja un verso escandido. Devuelve el HTML. */
-export function verso(analisis, { numeros = true } = {}) {
+export function verso(analisis, { numeros = true, etiqueta = 'div' } = {}) {
   const partes = analisis.silabas.map((s, i) => {
     const lic = s.licencias || [];
     const clases = ['sil'];
@@ -37,9 +37,18 @@ export function verso(analisis, { numeros = true } = {}) {
       + '</span>'
       + (cesura ? '<span class="cesura" title="cesura del verso compuesto">‖</span>' : '');
   });
+  // La medida no es el número de sílabas escritas: el hemistiquio agudo suma
+  // una sílaba métrica que ninguna letra sostiene. Se dice, para que nadie crea
+  // que se ha perdido algo por el camino.
   const falta = analisis.compensacion_cesura;
-  const nota = falta ? `<span class="fantasma" title="sílaba métrica que la compensación añade y el texto no sostiene">+${falta}</span>` : '';
-  return `<div class="verso">${partes.join('')}${nota}</div>`;
+  const nota = falta > 0
+    ? `<span class="fantasma" title="El hemistiquio acaba en aguda: la cesura añade ${falta} sílaba${falta > 1 ? 's' : ''} métrica${falta > 1 ? 's' : ''} que el texto no escribe.">+${falta} de cesura</span>`
+    : (falta < 0
+      ? `<span class="fantasma" title="El hemistiquio acaba en esdrújula: la cesura resta ${-falta} sílaba${falta < -1 ? 's' : ''} métrica${falta < -1 ? 's' : ''}.">${falta} de cesura</span>`
+      : '');
+  // dentro de un <button> sólo cabe contenido de frase, y el poema mete el
+  // verso dentro de uno: por eso se puede pedir <span>
+  return `<${etiqueta} class="verso">${partes.join('')}${nota}</${etiqueta}>`;
 }
 
 /** Ficha con la medida, el tipo y el esquema acentual. */
@@ -89,17 +98,43 @@ export function alternativas(lista) {
   return aviso + `<ol class="alternativas">${filas.join('')}</ol>`;
 }
 
-/** Poema entero: cada verso con su letra de rima al margen. */
+/** Poema entero: cada verso con su letra de rima al margen.
+ *
+ *  Cada verso es un botón que se despliega: los detalles y las lecturas rivales
+ *  se piden al motor cuando hace falta y no antes. Calcularlas para un poema
+ *  entero por si acaso cuesta mucho más de lo que se aprovecha.
+ */
 export function poema(versos, rima) {
   const esquema = (rima && rima.esquema) || '';
   const filas = versos.map((v, i) => {
     const letra = esquema[i] || '';
-    const clase = letra === '-' ? 'suelto' : (letra && letra === letra.toLowerCase() ? 'asonante' : 'consonante');
+    const clase = letra === '-' ? 'suelto'
+      : (letra && letra === letra.toLowerCase() ? 'asonante' : 'consonante');
+    const explica = letra === '-' ? 'sin pareja'
+      : (clase === 'asonante' ? 'rima asonante' : 'rima consonante');
     return `<li class="linea" data-n="${i + 1}">
-      <span class="rima ${clase}" title="${letra === '-' ? 'sin pareja' : (clase === 'asonante' ? 'rima asonante' : 'rima consonante')}">${escapar(letra || '·')}</span>
-      ${verso(v, { numeros: false })}
-      <span class="medida cifra">${v.medida}</span>
+      <button class="abrir" type="button" data-verso="${i}" aria-expanded="false"
+              aria-controls="detalle-${i}">
+        <span class="rima ${clase}" title="${explica}">${escapar(letra || '·')}</span>
+        ${verso(v, { etiqueta: 'span' })}
+        <span class="medida cifra">${v.medida}</span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      <div class="detalle" id="detalle-${i}" hidden></div>
     </li>`;
   });
   return `<ol class="poema">${filas.join('')}</ol>`;
+}
+
+/** Lo que se despliega al pinchar un verso del poema.
+ *
+ *  Sin repetir el verso: el de la fila de arriba es el mismo, y al desplegarse
+ *  aparece además su numeración de sílabas, que plegado no cabe.
+ */
+export function detalle(analisis, alts) {
+  return `<div class="detalle-dentro">
+    ${ficha(analisis)}
+    <h3 class="sub">otras lecturas posibles</h3>
+    ${alternativas(alts)}
+  </div>`;
 }

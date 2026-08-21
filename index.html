@@ -9,9 +9,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/styles.css">
+<script type="module" src="js/tema.js"></script>
 </head>
 <body>
 <div class="envoltorio">
+
+  <nav class="navegacion">
+    <a class="marca-mini" href="index.html">Jumper</a>
+    <ul>
+      <li><a href="index.html" aria-current="page">Escandir</a></li>
+      <li><a href="lote.html">Por lotes</a></li>
+      <li><a href="how-it-works.html">Cómo funciona</a></li>
+    </ul>
+    <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
+            aria-label="Cambiar entre claro y oscuro">◐</button>
+  </nav>
 
   <header class="principal">
     <div class="marca">
@@ -19,8 +31,6 @@
       <p class="lema">escansión de poesía española</p>
     </div>
     <p class="aviso-motor" id="aviso"><span class="punto"></span>preparando el analizador…</p>
-    <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
-            aria-label="Cambiar entre claro y oscuro">claro / oscuro</button>
   </header>
 
   <section class="entrada">
@@ -44,8 +54,6 @@
   </div>
 
   <footer>
-    <p><a class="enlace-doc" href="how-it-works.html">Cómo funciona →</a>
-    &nbsp;&nbsp; <a class="enlace-doc" href="lote.html">Analizar por lotes →</a></p>
     <p>El análisis lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>,
     el mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
     compilado a WebAssembly. No hay una segunda implementación que pueda divergir,
