@@ -1,216 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Analizador de Métrica y Rimas</title>
-  <!-- CSS Global -->
-  <link rel="stylesheet" href="css/styles.css" />
-
-  <!-- Librerías externas: Chart.js y SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const uploadZones = document.querySelectorAll('.file-upload-zone');
-  
-  uploadZones.forEach(uploadZone => {
-    const fileInput = uploadZone.querySelector('.fileUpload');
-    const browseButton = uploadZone.querySelector('.btn');
-    
-    // Al hacer clic en el botón, simula un click en el input de ficheros.
-    browseButton.addEventListener('click', function() {
-      fileInput.click();
-    });
-    
-    // Agrega eventos de drag and drop para esta zona
-    uploadZone.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      uploadZone.classList.add('active');
-    });
-    
-    uploadZone.addEventListener('dragleave', function() {
-      uploadZone.classList.remove('active');
-    });
-    
-    uploadZone.addEventListener('drop', function(e) {
-      e.preventDefault();
-      uploadZone.classList.remove('active');
-      fileInput.files = e.dataTransfer.files;
-      // Dispara un evento "change" para actualizar la UI
-      fileInput.dispatchEvent(new Event('change'));
-    });
-    
-    fileInput.addEventListener('change', function() {
-      const count = fileInput.files.length;
-      const p = uploadZone.querySelector('p');
-      if (p) {
-        p.textContent = count + (count === 1 ? ' archivo seleccionado' : ' archivos seleccionados');
-      }
-    });
-  });
-});
-
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jumper — escansión de poesía española</title>
+<meta name="description" content="Analiza la métrica y la rima de un poema español: medida, acentos, sinalefas, diéresis y esquema de rima.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="navbar-left">
-      <!-- Logo de la universidad; ajusta la ruta si es necesario -->
-      <img src="assets/logo_uni.png" alt="Logo Universidad" />
-      <ul>
-        <li><a href="index.html">Analizador de métrica y rima</a></li>
-        <li><a href="how-it-works.html">Cómo funciona</a></li>
-      </ul>
+<div class="envoltorio">
+
+  <header class="principal">
+    <div class="marca">
+      <h1>Jumper</h1>
+      <p class="lema">escansión de poesía española</p>
     </div>
-    <div class="navbar-right">
-      <!-- Enlaces a redes: ajusta URLs e imágenes -->
-      <a href="https://github.com/grmarco/jumper_web" target="_blank">
-        <img src="https://twenty-icons.com/github.com/64" alt="GitHub" />
-      </a>
-      <a href="https://www.linkedin.com/in/guillermo-marco-remon/" target="_blank">
-        <img src="https://twenty-icons.com/linkedin.com/64/" alt="LinkedIn" />
-      </a>
-      <a href="https://twitter.com/guillermomarco_" target="_blank">
-        <img src="https://twenty-icons.com/x.com/64/" alt="Twitter" />
-      </a>
+    <p class="aviso-motor" id="aviso"><span class="punto"></span>preparando el analizador…</p>
+    <button id="tema" class="tema" type="button" title="Cambiar entre claro y oscuro"
+            aria-label="Cambiar entre claro y oscuro">claro / oscuro</button>
+  </header>
+
+  <section class="entrada">
+    <label class="pista" for="texto">Pega un poema, o un solo verso para verlo en detalle.</label>
+    <textarea id="texto" spellcheck="false" placeholder="Cuando la alegre y dulce primavera…"></textarea>
+    <div class="acciones">
+      <button id="analizar">Escandir</button>
+      <button id="ejemplo" class="secundario">Probar con un ejemplo</button>
+      <span class="pista">o pulsa Ctrl+Intro</span>
     </div>
-  </nav>
+  </section>
 
-  <div class="container">
-    <h1>Analizador de Métrica y Rimas</h1>
+  <div id="salida"></div>
 
-    <!-- Explicación breve de la app -->
-    <header>
-      <p>
-        Este programa permite analizar la métrica y las rimas de poemas en español. Se puede trabajar en tres modos: 
-        análisis individual de un poema, análisis en lote (un corpus) y comparativa de dos corpus.
-      </p>
-    </header>
-
-
-    <!-- TABS -->
-    <ul class="tabs">
-      <li class="active" data-tab="singleTab">Análisis Individual</li>
-      <li data-tab="batchTab">Análisis en Lote</li>
-      <li data-tab="compareTab">Comparativa de Lotes</li>
-    </ul>
-
-    <!-- Pestaña Individual -->
-    <div id="singleTab" class="tab-content active">
-      <textarea id="poemInput" placeholder="Introduce el poema aquí..."></textarea>
-      <button class="btn" id="analyzeButton" type="button">Analizar Poema</button>
-      <div id="resultContainer"></div>
-      <div id="individualSummary"></div>
-      <!-- Si deseas exportación, puedes incluir también: -->
-      <select id="exportFormatIndividual" style="display:none;">
-        <option value="xlsx">Excel (.xlsx)</option>
-        <option value="csv">CSV (.csv)</option>
-      </select>
-      <button id="exportButtonIndividual" class="btn" style="display:none;" type="button">Exportar</button>
-    </div>
-
-
-    <!-- TAB 2: Análisis en Lote (un corpus) -->
-    <div id="batchTab" class="tab-content">
-      <p>Selecciona uno o varios ficheros .txt (cada uno con un poema) para analizarlos:</p>
-
-      <div class="file-upload-zone">
-        <div class="icon">📁</div>
-        <p>Arrastra y suelta archivos .txt aquí</p>
-        <p>o</p>
-        <button class="btn btn-secondary">Elegir archivos</button>
-        <input type="file" class="fileUpload" id="fileInput" multiple accept=".txt">
-      </div>
-
-
-      <button class="btn" id="analyzeAllBtn" type="button">Analizar Lote</button>
-      
-      <!-- Barra de progreso -->
-      <div id="progressContainer">
-        <div id="progressBar"></div>
-      </div>
-      <p id="progressText"></p>
-      <select id="exportFormatBatch" style="display:none;">
-        <option value="xlsx">Excel (.xlsx)</option>
-        <option value="csv">CSV (.csv)</option>
-      </select>
-      <button id="exportBatchBtn" class="btn" style="display:none;" type="button">Exportar Lote</button>
-      
-      <!-- Aquí se mostrarán la tabla, estadísticas y gráficos -->
-      <div id="statsContainer"></div>
-      <div id="extraStatsContainer"></div>
-      <canvas id="chartRima" width="300" height="200"></canvas>
-      <canvas id="chartVerso" width="400" height="200"></canvas>
-
-      <div id="batchResultContainer"></div>
-
-    </div>
-
-    <!-- TAB 3: Comparativa de Lotes (dos corpus) -->
-    <div id="compareTab" class="tab-content">
-      <p>Sube dos corpus de ficheros .txt. Cada corpus representa un conjunto de poemas.</p>
-      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-        <div style="flex: 1; min-width: 200px;">
-          <h3>Corpus 1</h3>
-
-          <div class="file-upload-zone">
-            <div class="icon">📁</div>
-            <p>Arrastra y suelta archivos .txt aquí</p>
-            <p>o</p>
-            <button class="btn btn-secondary">Elegir archivos</button>
-            <input type="file" class="fileUpload" id="fileInputCompare1" multiple accept=".txt">
-          </div>
-
-        </div>
-        <div style="flex: 1; min-width: 200px;">
-          <h3>Corpus 2</h3>
-
-
-          <div class="file-upload-zone">
-            <div class="icon">📁</div>
-            <p>Arrastra y suelta archivos .txt aquí</p>
-            <p>o</p>
-            <button class="btn btn-secondary">Elegir archivos</button>
-            <input type="file" class="fileUpload" id="fileInputCompare2" multiple accept=".txt">
-          </div>
-
-
-        </div>
-      </div>
-      <button class="btn" id="analyzeCompareBtn" type="button">Analizar Comparativa</button>
-      <!-- Barra de progreso para la comparativa -->
-      <div id="compareProgressContainer">
-        <div id="compareProgressBar"></div>
-      </div>
-      <p id="compareProgressText"></p>
-      <select id="exportFormatCompare" style="display:none;">
-        <option value="xlsx">Excel (.xlsx)</option>
-        <option value="csv">CSV (.csv)</option>
-      </select>
-      <button id="exportCompareBtn" class="btn" style="display:none;" type="button">Exportar Comparativa</button>
-      
-      <!-- Se mostrarán las tablas comparativas y un gráfico de clasificación métrica -->
-      <div id="compareStatsContainer"></div>
-      <div id="compareSyllableContainer"></div>
-      <div id="compareResourcesContainer"></div>
-      <div id="compareRhymeDetailContainer"></div>
-      <canvas id="chartClassifCompare" style="max-width:100%;"></canvas>
-    </div>
+  <div class="leyenda">
+    <span><span class="muestra">la&nbsp;a</span> sinalefa: dos vocales, una sílaba</span>
+    <span><span class="muestra">aho</span> sinéresis: dentro de la palabra</span>
+    <span><span class="muestra">rü</span> diéresis: el diptongo se deshace</span>
+    <span><span class="muestra">‖</span> cesura del verso compuesto</span>
+    <span><span class="muestra" style="color:var(--tonica)">´</span> sílaba tónica</span>
   </div>
 
-  <!-- FOOTER -->
   <footer>
-    <p><strong>Desarrollado por:</strong> Guillermo Marco Remón</p>
-    <div class="citation">
-      
-    </div>
+    <p><a class="enlace-doc" href="how-it-works.html">Cómo funciona →</a>
+    &nbsp;&nbsp; <a class="enlace-doc" href="lote.html">Analizar por lotes →</a></p>
+    <p>El análisis lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>,
+    el mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
+    compilado a WebAssembly. No hay una segunda implementación que pueda divergir,
+    y nada de lo que escribas sale de tu navegador.</p>
+    <p class="firma">
+      <a href="https://sites.google.com/view/nlp-uned/home"><img src="assets/logo_uni.png" alt="UNED" height="34"></a>
+      <span>Grupo de Procesamiento del Lenguaje Natural y Recuperación de
+      Información de la UNED. <a href="https://github.com/grmarco/jumper_web">código</a></span>
+    </p>
   </footer>
 
-  <!-- Carga de scripts (usamos type="module" para poder usar import/export) -->
-  <script src="js/metricAnalyzer.js"></script>
-  <script src="js/rhymeAnalyzer.js"></script>
-  <script type="module" src="js/main.js"></script>
+</div>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
