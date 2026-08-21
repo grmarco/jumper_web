@@ -14,7 +14,7 @@ on:
     - cron: '0 6 * * 1'   # los lunes
   workflow_dispatch:
   push:
-    branches: [master, main]
+    branches: [main]
 
 jobs:
   sincronizar:
