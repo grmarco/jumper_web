@@ -2314,11 +2314,18 @@ def _dibujar(verso, escansion):
 
     Se separa de quién la decidió —el verso suelto o el poema entero— porque el
     dibujo es el mismo y la decisión no.
+
+    Va palabra por palabra, y no sílaba por sílaba, porque la cesura obliga: el
+    hemistiquio se cierra en frontera de palabra y **la sinalefa no lo cruza**,
+    que es exactamente lo que hace el cómputo de la medida. Dibujarlo de otro
+    modo producía dos errores a la vez: la marca de cesura caía dentro de una
+    palabra, y la sílaba que cerraba el hemistiquio se fundía con la siguiente,
+    dejando el verso con una sílaba escrita menos de las que mide.
     """
     _verso, etiquetado, medida, acentos, ideales, tipo, ratio = escansion
     toks = etiquetado.split(' ')
 
-    unidades = []          # (texto, licencia_de_palabra) por palabra real
+    unidades = []          # (texto, corte de sinéresis, ¿lleva diéresis?) por palabra
     dialefa_tras = set()
     for t in toks:
         if not t:
@@ -2331,7 +2338,10 @@ def _dibujar(verso, escansion):
         limpio = _aplicar_dieresis(t).replace('#', '')
         unidades.append((limpio, corte_sineresis, dieresis))
 
-    silabas = []
+    fundidas = []
+    cesura = None
+    cierra_aqui = False     # ¿la palabra anterior cerró el hemistiquio?
+
     for i, (palabra, corte_sineresis, dieresis) in enumerate(unidades):
         trozos = _silabas_con_puntuacion(palabra)
         marca_en = None
@@ -2349,51 +2359,55 @@ def _dibujar(verso, escansion):
                 union_sineresis = len(trozos[k])
                 trozos = trozos[:k] + [trozos[k] + trozos[k + 1]] + trozos[k + 2:]
                 marca_en = k
+
         for k, tr in enumerate(trozos):
             lic = ['sineresis'] if k == marca_en else []
             uniones = [union_sineresis] if k == marca_en else []
             if dieresis and any(c in 'ïüäëö' for c in tr):
                 lic.append('dieresis')
-            silabas.append({'texto': tr, 'palabra': i, 'licencias': lic,
-                            'uniones': uniones})
-        # sinalefa con la siguiente, salvo que haya dialefa o sea la última
-        if i < len(unidades) - 1 and i not in dialefa_tras:
-            silabas[-1]['une_con_siguiente'] = True
+            s = {'texto': tr, 'licencias': lic, 'uniones': uniones}
 
-    # las sinalefas funden la última sílaba de una palabra con la primera de la
-    # siguiente: se comprueba que efectivamente haya contacto vocálico
-    fundidas = []
-    for s in silabas:
-        # la bandera se consulta pero NO se retira aquí: la sílaba que no se
-        # funde con la anterior sigue siendo candidata a fundirse con la que
-        # viene, y quitársela al apilarla rompía toda la cadena de sinalefas
-        previa = fundidas[-1] if fundidas else None
-        # en minúsculas: las pruebas fonológicas comparan contra listas de
-        # vocales minúsculas, y una mayúscula inicial hacía fallar la sinalefa
-        # justo donde más se nota, ante nombre propio (de Amor, que Aníbal)
-        izquierda = quitar_puntuacion(previa['texto']).lower() if previa else ''
-        derecha = quitar_puntuacion(s['texto']).lower()
-        if previa and previa.get('une_con_siguiente') and izquierda and derecha and \
-                termina_por_vocal(izquierda) and empieza_por_vocal(derecha) and \
-                not yeye(derecha):
-            # el punto de contacto es justo el espacio que separa las dos
-            # palabras dentro de la sílaba fundida
-            union = len(previa['texto'])
-            previa['texto'] += ' ' + s['texto']
-            previa['licencias'] = previa['licencias'] + ['sinalefa'] + s['licencias']
-            previa['uniones'] = previa['uniones'] + [union] + \
-                [u + union + 1 for u in s['uniones']]
-            previa['une_con_siguiente'] = s.get('une_con_siguiente', False)
-        else:
-            fundidas.append(s)
+            # la sinalefa funde la última sílaba de una palabra con la primera de
+            # la siguiente, si hay contacto vocálico, no hay dialefa, y el
+            # hemistiquio no se cierra justo ahí
+            previa = fundidas[-1] if fundidas else None
+            fundible = (k == 0 and previa is not None and not cierra_aqui
+                        and (i - 1) not in dialefa_tras)
+            if fundible:
+                # en minúsculas: las pruebas fonológicas comparan contra listas
+                # de vocales minúsculas, y una mayúscula inicial hacía fallar la
+                # sinalefa justo donde más se nota (de Amor, que Aníbal)
+                izquierda = quitar_puntuacion(previa['texto']).lower()
+                derecha = quitar_puntuacion(tr).lower()
+                fundible = (izquierda and derecha and termina_por_vocal(izquierda)
+                            and empieza_por_vocal(derecha) and not yeye(derecha))
+            if fundible:
+                # el punto de contacto es justo el espacio que separa las dos
+                # palabras dentro de la sílaba fundida
+                union = len(previa['texto'])
+                previa['texto'] += ' ' + s['texto']
+                previa['licencias'] = previa['licencias'] + ['sinalefa'] + s['licencias']
+                previa['uniones'] = previa['uniones'] + [union] + \
+                    [u + union + 1 for u in s['uniones']]
+            else:
+                fundidas.append(s)
+
+        # ¿cierra esta palabra el hemistiquio? Misma regla que al medir: en
+        # frontera de palabra, con el ajuste final de la palabra, y nunca en
+        # átona, porque una preposición no sostiene una pausa
+        cierra_aqui = False
+        if cesura is None and medida > 11:
+            limpia = quitar_puntuacion(palabra.lower()).strip()
+            if limpia and limpia not in atonas:
+                factor = palabra_silabas_acentos(limpia)[2]
+                if en_hemistiquio(len(fundidas), factor, medida):
+                    cesura = len(fundidas)
+                    cierra_aqui = True
 
     for n, s in enumerate(fundidas, 1):
         s['n'] = n
         s['tonica'] = n in acentos
-        s.pop('palabra', None)
-        s.pop('une_con_siguiente', None)
 
-    cesura = math.ceil(medida / 2) if medida > 11 else None
     # La medida no es el número de sílabas del texto: al final del verso se
     # suma una si acaba en aguda y se resta una si acaba en esdrújula, y en los
     # versos compuestos el hemistiquio lleva su propia compensación, que es una
