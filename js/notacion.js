@@ -2,8 +2,14 @@
 //
 // Nada de la notación interna del motor (~ para diéresis, # para sinéresis)
 // llega a la pantalla. Lo que se ve es lo que un filólogo espera: la ligadura
-// entre las vocales que se funden, la diéresis escrita sobre la vocal débil, el
-// acento sobre la sílaba tónica y la cesura marcada.
+// entre las vocales que se funden, la diéresis escrita sobre la vocal débil, la
+// sílaba tónica destacada y la cesura marcada.
+//
+// Dos dimensiones, dos colores. El acento es la voz del verso y va en el color
+// de la marca —negrita, sin tilde dibujada encima: la tilde competía con las
+// que la ortografía ya trae—. Las licencias métricas y la cesura son aparato, y
+// llevan el suyo propio. Pintarlas del mismo color hacía leer como una misma
+// cosa dos que no lo son.
 //
 // La ligadura sustituye al arco que había antes. El arco se estiraba sobre la
 // sílaba entera con preserveAspectRatio="none", y una sílaba fundida puede ser

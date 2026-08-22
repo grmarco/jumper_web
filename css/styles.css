@@ -12,21 +12,23 @@
   --linea-suave:#E7E9EE;
   --tonica:#A3252E;
   --atona:#6E7885;
-  --arco:#A3252E;
+  /* las licencias métricas no son acentos: son aparato, y llevan su propio
+     color para que no se lean como lo mismo */
+  --licencia:#2C6E6F;
   --sombra:0 1px 2px rgba(23,26,32,.05), 0 8px 24px -16px rgba(23,26,32,.28);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-tema="claro"]){
     --papel:#121419; --superficie:#1A1D23; --tinta:#E7E9ED; --tinta-suave:#9AA1AC;
     --tinta-tenue:#767D89; --linea:#2B2F38; --linea-suave:#23272F;
-    --tonica:#E9737B; --atona:#8B95A2; --arco:#E9737B;
+    --tonica:#E9737B; --atona:#8B95A2; --licencia:#63B2B4;
     --sombra:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
   }
 }
 :root[data-tema="oscuro"]{
   --papel:#121419; --superficie:#1A1D23; --tinta:#E7E9ED; --tinta-suave:#9AA1AC;
   --tinta-tenue:#767D89; --linea:#2B2F38; --linea-suave:#23272F;
-  --tonica:#E9737B; --atona:#8B95A2; --arco:#E9737B;
+  --tonica:#E9737B; --atona:#8B95A2; --licencia:#63B2B4;
   --sombra:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
 }
 
@@ -155,16 +157,12 @@ span.verso{display:flex}
   padding:1.1rem 0 .3rem;
 }
 .sil{
-  position:relative;display:inline-block;padding:.55rem .18rem .95rem;
+  position:relative;display:inline-block;padding:.2rem .18rem .95rem;
   border-left:1px solid var(--linea-suave);
 }
 .sil:first-child{border-left:none}
 .sil .txt{white-space:pre}
 .sil.tonica .txt{color:var(--tonica);font-weight:600}
-.sil.tonica::before{
-  content:'´';position:absolute;top:-.05rem;left:50%;transform:translateX(-50%);
-  color:var(--tonica);font-size:1.1rem;line-height:1;
-}
 .sil .num{
   position:absolute;bottom:0;left:50%;transform:translateX(-50%);
   font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.62rem;
@@ -177,14 +175,16 @@ span.verso{display:flex}
   display:inline-block;width:.62em;height:.3em;margin:0 .01em;
   vertical-align:-.06em;overflow:visible;
 }
-.liga path{fill:none;stroke:var(--arco);stroke-width:1.6;stroke-linecap:round}
+.liga path{fill:none;stroke:var(--licencia);stroke-width:1.6;stroke-linecap:round}
 .sil.con-sinalefa .txt,.sil.con-sineresis .txt{white-space:nowrap}
-.sil.con-dieresis .txt{border-bottom:2px dotted var(--arco)}
+.sil.con-dieresis .txt{border-bottom:2px dotted var(--licencia)}
 .cesura{
   align-self:center;margin:0 .45rem;flex:none;
-  width:5px;height:1.5em;border-left:1.5px solid var(--tinta-tenue);
-  border-right:1.5px solid var(--tinta-tenue);
-  font-size:0;   /* la doble barra se dibuja: no todas las tipografías traen ‖ */
+  width:6px;height:1.5rem;border-left:1.5px solid var(--licencia);
+  border-right:1.5px solid var(--licencia);
+  /* la doble barra se dibuja porque no todas las tipografías traen ‖. La altura
+     va en rem y no en em: con `font-size:0` para ocultar el glifo, 1.4em es 0 */
+  font-size:0;
 }
 .fantasma{
   align-self:center;margin-left:.5rem;padding:.1rem .4rem;border-radius:3px;
@@ -268,12 +268,12 @@ span.verso{display:flex}
 .abrir .verso{transition:transform .1s}
 
 .linea .verso{font-size:1.18rem;padding:.5rem 0 .2rem;flex:1;row-gap:.5rem}
-.linea .sil{padding:.4rem .16rem .4rem}
+.linea .sil{padding:.15rem .16rem .4rem}
 /* la numeración de sílabas sólo aparece al desplegar: plegado no cabe, y es
    parte de lo que se gana al abrir */
 .linea .sil .num{display:none}
 .linea.abierta .sil .num{display:block}
-.linea.abierta .sil{padding-bottom:.9rem}
+.linea.abierta .sil{padding-bottom:.9rem;padding-top:.15rem}
 .linea.abierta .verso{padding-bottom:.4rem;row-gap:.75rem}
 
 .chevron{
@@ -326,7 +326,7 @@ span.verso{display:flex}
   border-top:1px solid var(--linea);margin-top:2rem;padding-top:1rem}
 .leyenda span{display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
 .leyenda .muestra{font-family:Newsreader,Georgia,serif;font-size:1.15rem;color:var(--tinta)}
-.leyenda .muestra.con-dieresis{border-bottom:2px dotted var(--arco)}
+.leyenda .muestra.con-dieresis{border-bottom:2px dotted var(--licencia)}
 
 /* ---------- pie ---------- */
 footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
@@ -371,7 +371,7 @@ footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
   .lema{font-size:.95rem}
 
   .verso{font-size:1.2rem;row-gap:.6rem}
-  .sil{padding:.5rem .14rem .9rem}
+  .sil{padding:.2rem .14rem .9rem}
   .cesura{margin:0 .3rem}
 
   .abrir{gap:.55rem;flex-wrap:wrap;padding:.5rem .4rem}
@@ -413,7 +413,7 @@ footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
   letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-tenue);
 }
 .doc td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:right;padding-right:0}
-.doc .con-dieresis{border-bottom:2px dotted var(--arco)}
+.doc .con-dieresis{border-bottom:2px dotted var(--licencia)}
 .doc code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em;color:var(--tinta)}
 .doc .fuente{font-size:.82rem;color:var(--tinta-tenue)}
 .migas{
@@ -592,3 +592,4 @@ button.secundario[data-trabajando]::after{
 
 /* la sílaba que el hemistiquio esdrújulo descuenta: no tiene número métrico */
 .sil .num.descontada{color:var(--linea);font-size:.7rem}
+.leyenda .tonica-muestra{color:var(--tonica);font-weight:600}
