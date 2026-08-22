@@ -2309,6 +2309,35 @@ def silabas_del_poema(versos):
     return [_dibujar(v, r) for v, r in zip(limpios, escandir_poema(limpios))]
 
 
+def posicion_metrica(n, cesura, compensacion):
+    """De número de sílaba escrita a posición métrica.
+
+    No son lo mismo en cuanto hay compensación de hemistiquio, y los acentos
+    vienen siempre en posiciones métricas. En «blandiera el brazo de Hércules, o
+    el brazo de Sansón», *Hércules* es esdrújula y su última sílaba no cuenta:
+    de ahí en adelante la sílaba escrita 14 —*són*— es la posición métrica 13,
+    que es donde el análisis pone el último acento. Aplicarlos sobre la sílaba
+    escrita marcaba como tónicas *o el* y *San*, que son átonas.
+
+        Args:
+            n (int): número de sílaba escrita, empezando en 1
+            cesura (int): sílaba escrita tras la cual va la cesura, o None
+            compensacion (int): sílabas métricas que el hemistiquio añade (+) o
+                descuenta (-)
+        Returns:
+            int: la posición métrica, o None si la sílaba es la descontada
+    """
+    if cesura is None or not compensacion:
+        return n
+    if n < cesura:
+        return n
+    if n == cesura:
+        # hemistiquio esdrújulo: la última sílaba escrita se descuenta y no
+        # ocupa posición métrica ninguna
+        return None if compensacion < 0 else n
+    return n + compensacion
+
+
 def _dibujar(verso, escansion):
     """Convierte una escansión ya decidida en sílabas dibujables.
 
@@ -2404,22 +2433,24 @@ def _dibujar(verso, escansion):
                     cesura = len(fundidas)
                     cierra_aqui = True
 
-    for n, s in enumerate(fundidas, 1):
-        s['n'] = n
-        s['tonica'] = n in acentos
-
     # La medida no es el número de sílabas del texto: al final del verso se
     # suma una si acaba en aguda y se resta una si acaba en esdrújula, y en los
     # versos compuestos el hemistiquio lleva su propia compensación, que es una
-    # sílaba métrica sin texto que la sostenga. Se declara para que quien dibuje
-    # la escansión sepa que ahí falta un hueco y no crea que se ha perdido algo.
+    # sílaba métrica sin texto que la sostenga.
     ultima = quitar_puntuacion(verso.lower()).strip().split(' ')[-1] if verso.strip() else ''
     ajuste = palabra_silabas_acentos(ultima)[2] if ultima else 0
+    compensacion = medida - len(fundidas) - ajuste
+
+    for n, s in enumerate(fundidas, 1):
+        s['n'] = n
+        s['metrica'] = posicion_metrica(n, cesura, compensacion)
+        s['tonica'] = s['metrica'] in acentos
+
     return {'verso': verso, 'silabas': fundidas, 'medida': medida,
             'silabas_reales': len(fundidas), 'acentos': acentos,
             'tipo': tipo, 'cesura': cesura,
             'ajuste_final': ajuste,
-            'compensacion_cesura': medida - len(fundidas) - ajuste}
+            'compensacion_cesura': compensacion}
 
 
 NOMBRE_LICENCIA = {'dialefa': 'dialefa', 'dieresis': 'diéresis', 'sineresis': 'sinéresis'}

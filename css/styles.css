@@ -589,3 +589,6 @@ button.secundario[data-trabajando]::after{
   .grupos-rima li{grid-template-columns:1.4rem 4.4rem 1fr;gap:.5rem}
   .grupos-rima .cuantos{display:none}
 }
+
+/* la sílaba que el hemistiquio esdrújulo descuenta: no tiene número métrico */
+.sil .num.descontada{color:var(--linea);font-size:.7rem}

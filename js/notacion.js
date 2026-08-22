@@ -48,6 +48,20 @@ function conLigaduras(silaba) {
   return salida + escapar(texto.slice(desde));
 }
 
+/**
+ * El número que va bajo la sílaba: su posición MÉTRICA, no la escrita.
+ *
+ * Es a lo que se refiere la lista de acentos. Cuando el hemistiquio acaba en
+ * esdrújula, su última sílaba escrita se descuenta y no ocupa ninguna: se marca
+ * con un punto, porque «no cuenta» es información, no un hueco.
+ */
+function numero(s) {
+  if (s.metrica == null) {
+    return '<span class="num descontada" title="Esta sílaba no cuenta: el hemistiquio acaba en esdrújula y se descuenta la última.">·</span>';
+  }
+  return `<span class="num">${s.metrica}</span>`;
+}
+
 /** Dibuja un verso escandido. Devuelve el HTML. */
 export function verso(analisis, { numeros = true, etiqueta = 'div' } = {}) {
   const partes = analisis.silabas.map((s, i) => {
@@ -59,7 +73,7 @@ export function verso(analisis, { numeros = true, etiqueta = 'div' } = {}) {
     const cesura = analisis.cesura && s.n === analisis.cesura;
     return `<span class="${clases.join(' ')}"${titulo ? ` title="${escapar(titulo)}"` : ''}>`
       + `<span class="txt">${conLigaduras(s)}</span>`
-      + (numeros ? `<span class="num">${s.n}</span>` : '')
+      + (numeros ? numero(s) : '')
       + '</span>'
       + (cesura ? '<span class="cesura" title="cesura del verso compuesto">‖</span>' : '');
   });
