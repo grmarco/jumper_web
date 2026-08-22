@@ -2309,6 +2309,31 @@ def silabas_del_poema(versos):
     return [_dibujar(v, r) for v, r in zip(limpios, escandir_poema(limpios))]
 
 
+def _punto_de_fusion(originales, colapsadas):
+    """Qué dos sílabas de la palabra original funde la sinéresis.
+
+    Hace falta porque `quitar_hiato_en` **borra** una de las dos vocales en vez
+    de marcarla: de `campeón` sale `camp#ón`, y dibujar ese token tal cual
+    enseñaba «campón» donde el poeta escribió «campeón». El texto del verso no
+    se toca nunca, así que se recupera comparando las dos versiones, que
+    coinciden sílaba a sílaba hasta la que se funde.
+
+        Args:
+            originales (list of str): sílabas de la palabra tal cual se escribe
+            colapsadas (list of str): sílabas del token, con una vocal de menos
+        Returns:
+            int: índice de la primera de las dos sílabas que se funden, o None
+            si las dos versiones no encajan
+    """
+    if len(originales) != len(colapsadas) + 1:
+        return None
+    for j, (a, b) in enumerate(zip(originales, colapsadas)):
+        if a != b:
+            return j
+    # coinciden en todo lo que hay: la sílaba de más es la última
+    return len(colapsadas) - 1
+
+
 def posicion_metrica(n, cesura, compensacion):
     """De número de sílaba escrita a posición métrica.
 
@@ -2354,40 +2379,69 @@ def _dibujar(verso, escansion):
     _verso, etiquetado, medida, acentos, ideales, tipo, ratio = escansion
     toks = etiquetado.split(' ')
 
-    unidades = []          # (texto, corte de sinéresis, ¿lleva diéresis?) por palabra
+    # Las palabras tal cual las escribió el autor. El token de un candidato no
+    # sirve para dibujar: en el paso de verso compuesto llega sin puntuación ni
+    # mayúsculas, y la sinéresis le ha borrado una vocal. El token dice QUÉ
+    # licencias hay y dónde; el texto lo pone siempre el verso.
+    escritas = [p for p in expandir_numeros(verso).split(' ') if p]
+
+    unidades = []          # (texto, corte de sinéresis, ¿diéresis?, palabra escrita)
     dialefa_tras = set()
     for t in toks:
         if not t:
             if unidades:
                 dialefa_tras.add(len(unidades) - 1)
             continue
-        # la posición de la marca dice QUÉ dos sílabas funde la sinéresis
         corte_sineresis = t.find('#')
         dieresis = '~' in t
         limpio = _aplicar_dieresis(t).replace('#', '')
-        unidades.append((limpio, corte_sineresis, dieresis))
+        i = len(unidades)
+        original = escritas[i] if i < len(escritas) else limpio
+        unidades.append((limpio, corte_sineresis, dieresis, original))
 
     fundidas = []
     cesura = None
     cierra_aqui = False     # ¿la palabra anterior cerró el hemistiquio?
 
-    for i, (palabra, corte_sineresis, dieresis) in enumerate(unidades):
+    for i, (palabra, corte_sineresis, dieresis, original) in enumerate(unidades):
         trozos = _silabas_con_puntuacion(palabra)
         marca_en = None
         union_sineresis = None
-        if corte_sineresis >= 0 and len(trozos) >= 2:
-            # la sinéresis funde en una las dos sílabas que la marca separa
-            acumulado = 0
-            for k, tr in enumerate(trozos):
-                acumulado += len(tr)
-                if acumulado >= corte_sineresis:
-                    break
-            if k + 1 < len(trozos):
-                # dónde, dentro del texto de la sílaba resultante, quedan pegadas
-                # las dos que eran: es el punto que hay que marcar al dibujar
-                union_sineresis = len(trozos[k])
-                trozos = trozos[:k] + [trozos[k] + trozos[k + 1]] + trozos[k + 2:]
-                marca_en = k
+        # la diéresis sí cambia el texto a propósito —*ruido* se escribe
+        # *rüido*—, así que ahí manda el token
+        escritas_palabra = None if dieresis else _silabas_con_puntuacion(original)
+        j = None
+
+        if corte_sineresis >= 0:
+            if escritas_palabra is not None and len(escritas_palabra) == len(trozos) + 1:
+                # al token le falta la vocal que la sinéresis absorbe: la fusión
+                # se localiza comparando las dos versiones, que coinciden hasta
+                # la sílaba que se funde
+                j = _punto_de_fusion(escritas_palabra, trozos)
+                if j is not None:
+                    trozos = escritas_palabra
+            else:
+                # el token conserva las letras: la posición de la marca dice qué
+                # dos sílabas se funden
+                acumulado = 0
+                for k, tr in enumerate(trozos):
+                    acumulado += len(tr)
+                    if acumulado >= corte_sineresis:
+                        j = k
+                        break
+                if escritas_palabra is not None and len(escritas_palabra) == len(trozos):
+                    trozos = escritas_palabra
+        elif escritas_palabra is not None and len(escritas_palabra) == len(trozos):
+            # mismo corte silábico, mejor texto: con su puntuación y sus
+            # mayúsculas, que el token compuesto ha perdido
+            trozos = escritas_palabra
+
+        if j is not None and j + 1 < len(trozos):
+            # dónde, dentro del texto de la sílaba resultante, quedan pegadas
+            # las dos que eran: es el punto que hay que marcar al dibujar
+            union_sineresis = len(trozos[j])
+            trozos = trozos[:j] + [trozos[j] + trozos[j + 1]] + trozos[j + 2:]
+            marca_en = j
 
         for k, tr in enumerate(trozos):
             lic = ['sineresis'] if k == marca_en else []
@@ -2426,7 +2480,7 @@ def _dibujar(verso, escansion):
         # átona, porque una preposición no sostiene una pausa
         cierra_aqui = False
         if cesura is None and medida > 11:
-            limpia = quitar_puntuacion(palabra.lower()).strip()
+            limpia = quitar_puntuacion(original.lower()).strip()
             if limpia and limpia not in atonas:
                 factor = palabra_silabas_acentos(limpia)[2]
                 if en_hemistiquio(len(fundidas), factor, medida):
