@@ -38,21 +38,21 @@
   </header>
 
   <section class="entrada">
-    <label class="pista" for="texto">Pega un poema, o un solo verso para verlo en detalle.</label>
+    <label class="pista" for="texto">Introduzca un poema o un verso.</label>
     <textarea id="texto" spellcheck="false" placeholder="Cuando la alegre y dulce primavera…"></textarea>
     <div class="acciones">
       <button id="analizar">Escandir</button>
-      <button id="ejemplo" class="secundario">Probar con un ejemplo</button>
-      <span class="pista">o pulsa Ctrl+Intro</span>
+      <button id="ejemplo" class="secundario">Cargar un ejemplo</button>
+      <span class="pista">o Ctrl+Intro</span>
     </div>
   </section>
 
   <div id="salida"></div>
 
   <div class="leyenda">
-    <span><span class="muestra">la<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>a</span> sinalefa: dos vocales de dos palabras, una sílaba</span>
-    <span><span class="muestra">a<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>ho</span> sinéresis: dos vocales de la misma palabra</span>
-    <span><span class="muestra con-dieresis">rü</span> diéresis: el diptongo se deshace</span>
+    <span><span class="muestra">la<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>a</span> sinalefa: vocales de palabras contiguas en una sílaba</span>
+    <span><span class="muestra">a<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>ho</span> sinéresis: vocales en hiato de una palabra en una sílaba</span>
+    <span><span class="muestra con-dieresis">rü</span> diéresis: diptongo en dos sílabas</span>
     <span><span class="muestra">‖</span> cesura del verso compuesto</span>
     <span><span class="muestra tonica-muestra">sí</span> sílaba tónica</span>
   </div>
@@ -61,15 +61,14 @@
     <div class="pie-rejilla">
       <div class="pie-bloque">
         <h2>Jumper</h2>
-        <p>Escansión automática de poesía española. Cuenta las sílabas métricas,
-        sitúa los acentos, nombra el tipo de verso y reconoce la rima.</p>
+        <p>Escansión automática de poesía española: cómputo silábico, acentos,
+        tipo de verso y esquema de rima.</p>
       </div>
       <div class="pie-bloque">
         <h2>El análisis</h2>
-        <p>Lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>, el
-        mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
-        compilado a WebAssembly. No hay una segunda implementación que pueda
-        divergir, y nada de lo que escribas sale de tu navegador.</p>
+        <p>Lo realiza <a href="https://github.com/grmarco/jumper">jumper.py</a>,
+        la implementación de referencia, ejecutada en el navegador sobre CPython
+        compilado a WebAssembly. El texto no se envía a ningún servidor.</p>
       </div>
       <div class="pie-bloque">
         <h2>Cita</h2>

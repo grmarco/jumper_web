@@ -1,82 +1,74 @@
 # Jumper web
 
-Escansión de poesía española en el navegador: **https://grmarco.github.io/jumper_web/**
+Interfaz web de Jumper, un algoritmo de escansión automática de poesía española:
+**https://grmarco.github.io/jumper_web/**
 
-Pega un poema y devuelve, verso a verso, la medida, los acentos, el tipo de
-verso y el esquema de rima, con las sinalefas, sinéresis y diéresis dibujadas
-como se dibujan en un manual y la cesura en su sitio. **Pincha en cualquier
-verso** y se despliegan su numeración de sílabas, su ficha, su rima —palabra
-rimante, terminación consonante y asonante, y con qué versos comparte grupo— y
-las demás lecturas que el algoritmo consideró, con la puntuación de cada una
-desglosada.
+Para cada verso, la web muestra la medida, los acentos, el tipo de verso y las
+licencias métricas (sinalefa, sinéresis, diéresis), además de la cesura de los
+versos compuestos. Para cada poema muestra el esquema de rima y la forma
+estrófica. Al seleccionar un verso se despliegan su numeración silábica, su rima
+(palabra rimante, terminaciones consonante y asonante, versos del mismo grupo) y
+las lecturas alternativas consideradas, con el desglose de su puntuación.
 
-Las fusiones se marcan con una ligadura **entre las dos vocales que se juntan**,
-no con un arco sobre la sílaba: el motor dice en qué punto exacto del texto se
-funden, así que la marca no puede descuadrarse por ancha que sea la sílaba.
+Las fusiones vocálicas se marcan con una ligadura entre las dos vocales
+afectadas, en la posición que indica el motor.
 
-En **por lotes** se escande un corpus entero, un fichero por obra, y se descarga
-la tabla en Excel o en CSV con una fila por verso.
+La página **Por lotes** analiza un corpus completo, un fichero por obra, y
+exporta los resultados en Excel o CSV, con una fila por verso.
 
-## El algoritmo no está aquí
+## Motor
 
-Esta web **no reimplementa** Jumper. Ejecuta `jumper.py` —el mismo fichero que se
-distribuye en [grmarco/jumper](https://github.com/grmarco/jumper) y el mismo que
-se evalúa contra los corpus anotados— dentro de CPython compilado a WebAssembly,
-con [Pyodide](https://pyodide.org).
+Esta web no reimplementa el algoritmo. Ejecuta `jumper.py`, el fichero que se
+distribuye en [grmarco/jumper](https://github.com/grmarco/jumper) y que se evalúa
+contra los corpus anotados, sobre CPython compilado a WebAssembly con
+[Pyodide](https://pyodide.org).
 
-Esto no es una elección estética. Durante años el repositorio llevaba una
-traducción del algoritmo a JavaScript, `metricAnalyzer.js` y `rhymeAnalyzer.js`,
-50 KB que se quedaron en la versión de 2021 mientras el original seguía
-mejorando: sin el dígrafo con tilde, sin la *h* intervocálica, sin el
-desambiguador probabilístico, sin la norma de tonicidad. La página avisaba de que
-era menos precisa —87 % frente a 95 %— y cada mejora futura habría habido que
-hacerla dos veces. Con el motor de verdad dentro, la divergencia es imposible por
-construcción.
+Las versiones anteriores de la web usaban una traducción del algoritmo a
+JavaScript (`metricAnalyzer.js`, `rhymeAnalyzer.js`) correspondiente a la versión
+de 2021, con una exactitud del 87 % frente al 95 % del motor actual. Ejecutar el
+fichero original elimina la divergencia entre ambas implementaciones.
 
-El precio es la primera carga: unos megabytes de intérprete, un par de segundos,
-y después queda en la caché del navegador. Cada verso se analiza en milisegundos.
-No hay servidor, así que nada de lo que se escriba sale del ordenador de quien lo
-escribe.
+La primera carga descarga el intérprete (unos megabytes, unos segundos); después
+queda en la caché del navegador. Cada verso se analiza en milisegundos. El
+análisis se realiza en el navegador y el texto no se envía a ningún servidor.
 
 ## Ficheros
 
 | ruta | qué es |
 |---|---|
-| `jumper.py` | el motor, traído de `grmarco/jumper`. **No editar aquí** |
-| `js/motor.js` | la fachada: carga Pyodide, mete `jumper.py` dentro y devuelve objetos JS |
-| `js/notacion.js` | dibuja la escansión y la rima. Ni `~` ni `#` llegan a la pantalla |
-| `js/app.js` | la portada: entrada, resultados, enlace compartible |
-| `js/lote.js` | muchos ficheros a la vez, con su recuento |
-| `js/tabla.js` | el análisis convertido en filas. Sin DOM, para poder probarlo |
-| `js/xlsx.js` | escribe el `.xlsx` a mano: es un ZIP de XML, y así no hay CDN |
-| `js/tema.js` | claro y oscuro, en las tres páginas |
-| `js/estado.js` | los avisos: qué está cargando, qué se está calculando, qué ha caducado |
-| `css/styles.css` | los estilos, con tema claro y oscuro |
-| `lote.html` | el corpus entero, con exportación a Excel o CSV |
-| `how-it-works.html` | cómo cuenta, cómo elige y qué precisión tiene |
-| `test/conformidad.mjs` | la prueba que impide que esto vuelva a divergir |
+| `jumper.py` | el motor, copiado de `grmarco/jumper`. No se edita en este repositorio |
+| `js/motor.js` | interfaz con el motor: carga Pyodide y `jumper.py` y devuelve objetos JS |
+| `js/notacion.js` | representación de la escansión y la rima |
+| `js/app.js` | página principal: entrada, resultados, enlace compartible |
+| `js/lote.js` | análisis por lotes |
+| `js/tabla.js` | conversión del análisis en filas, sin dependencia del DOM |
+| `js/xlsx.js` | generación de `.xlsx` sin dependencias externas |
+| `js/tema.js` | tema claro y oscuro |
+| `js/estado.js` | mensajes de estado: carga, cálculo, resultado desactualizado |
+| `css/styles.css` | hoja de estilos |
+| `lote.html` | análisis por lotes, con exportación a Excel o CSV |
+| `how-it-works.html` | descripción del método y evaluación |
+| `test/conformidad.mjs` | prueba de conformidad entre el motor del navegador y el de Python |
 
 ## Pruebas
 
 ```bash
-npm install        # sólo pyodide, y sólo para la prueba
+npm install        # instala Pyodide para la prueba
 npm test
 ```
 
-`test/conformidad.mjs` pasa una lista de versos —uno por licencia métrica y uno
-por cada caso que ha costado sangre alguna vez— por el motor del navegador y por
-el Python del sistema, y exige que la salida sea **idéntica**. Pyodide corre
-también fuera del navegador, así que la prueba no necesita ni navegador ni
-Playwright.
+`test/conformidad.mjs` analiza una lista de versos (al menos uno por licencia
+métrica y uno por cada error corregido) con el motor del navegador y con el
+Python del sistema, y exige que ambas salidas sean idénticas. Pyodide también se
+ejecuta en Node, por lo que la prueba no requiere navegador.
 
-Además, `.github/workflows/motor.yml` trae `jumper.py` del repositorio del motor
-cada semana y abre un pull request si ha cambiado, sin fundirlo si la
-conformidad falla.
+`.github/workflows/motor.yml` comprueba semanalmente si `jumper.py` ha cambiado
+en el repositorio del motor y, en ese caso, abre un pull request, que no se
+integra si la prueba de conformidad falla.
 
 ## Despliegue
 
-GitHub Pages publica `main` tal cual. No hay compilación: son ficheros estáticos
-y un intérprete de Python que se descarga en el navegador.
+GitHub Pages publica la rama `main` directamente. No hay paso de compilación.
 
 ## Servir en local
 
@@ -84,10 +76,10 @@ y un intérprete de Python que se descarga en el navegador.
 npm run serve      # http://localhost:8000
 ```
 
-Hace falta un servidor: `jumper.py` se pide con `fetch`, y desde `file://` el
-navegador lo bloquea.
+Se necesita un servidor local, porque `jumper.py` se carga con `fetch` y el
+navegador bloquea esa petición desde `file://`.
 
 ---
 
-Investigación del grupo de Procesamiento del Lenguaje Natural y Recuperación de
-Información de la UNED: https://sites.google.com/view/nlp-uned/home
+Grupo de Procesamiento del Lenguaje Natural y Recuperación de Información de la
+UNED: https://sites.google.com/view/nlp-uned/home

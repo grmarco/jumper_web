@@ -112,14 +112,14 @@ export function ficha(analisis) {
 /** Las lecturas rivales, con el desglose de por qué ganó la elegida. */
 export function alternativas(lista) {
   if (!lista || lista.length < 2) {
-    return '<p class="sin-alternativas">Este verso no admite otra lectura: no hay ninguna licencia en juego.</p>';
+    return '<p class="sin-alternativas">Lectura única: el verso no admite licencias métricas.</p>';
   }
   const filas = lista.map((a) => {
     const licencias = a.licencias.length
       ? a.licencias.map((d) =>
           `<li><b>${escapar(d.tipo)}</b> <span class="peso">${d.peso.toFixed(2)}</span>`
           + `<span class="porque">${escapar(d.porque.join(', '))}</span></li>`).join('')
-      : '<li class="ninguna">sin licencias: el verso se lee como está escrito</li>';
+      : '<li class="ninguna">sin licencias</li>';
     return `<li class="alternativa${a.elegida ? ' elegida' : ''}">
       <div class="cabeza">
         ${a.elegida ? '<span class="sello">elegida</span>' : ''}
@@ -130,16 +130,16 @@ export function alternativas(lista) {
       <div class="cuenta">
         <span class="total">${a.puntuacion.toFixed(2)}</span>
         <span class="igual">=</span>
-        <span title="cuán frecuente es este esquema acentual en la tradición">tradición ${a.patron.toFixed(2)}</span>
+        <span title="log-probabilidad del esquema acentual">tradición ${a.patron.toFixed(2)}</span>
         <span class="mas">+</span>
-        <span title="cuán probable es cada licencia en su contexto">licencias ${(a.puntuacion - a.patron).toFixed(2)}</span>
+        <span title="log-probabilidad de las licencias en su contexto">licencias ${(a.puntuacion - a.patron).toFixed(2)}</span>
       </div>
       <ul class="licencias">${licencias}</ul>
     </li>`;
   });
   const margen = lista[0].puntuacion - lista[1].puntuacion;
   const aviso = margen < 0.5
-    ? `<p class="ambiguo">El margen con la segunda lectura es de sólo ${margen.toFixed(2)}: el verso es genuinamente ambiguo y conviene decidirlo a oído.</p>`
+    ? `<p class="ambiguo">Lectura ambigua: la diferencia con la segunda lectura es de ${margen.toFixed(2)}.</p>`
     : '';
   return aviso + `<ol class="alternativas">${filas.join('')}</ol>`;
 }

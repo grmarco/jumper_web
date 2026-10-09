@@ -38,9 +38,9 @@
 
   <section class="entrada">
     <label class="zona" id="zona" for="ficheros">
-      <span class="grande">Elige tus ficheros de texto</span>
-      <span class="pista">o arrástralos aquí. Un fichero por obra, un verso por línea.
-      Se analizan en tu navegador: no se suben a ningún sitio.</span>
+      <span class="grande">Seleccionar ficheros de texto</span>
+      <span class="pista">o arrastrarlos aquí. Un fichero por obra, un verso por línea.
+      El análisis se realiza en el navegador; los ficheros no se envían a ningún servidor.</span>
       <input type="file" id="ficheros" multiple accept=".txt,text/plain" hidden>
     </label>
     <div class="progreso" id="progreso" role="status" aria-live="polite" hidden></div>
@@ -57,15 +57,14 @@
     <div class="pie-rejilla">
       <div class="pie-bloque">
         <h2>Jumper</h2>
-        <p>Escansión automática de poesía española. Cuenta las sílabas métricas,
-        sitúa los acentos, nombra el tipo de verso y reconoce la rima.</p>
+        <p>Escansión automática de poesía española: cómputo silábico, acentos,
+        tipo de verso y esquema de rima.</p>
       </div>
       <div class="pie-bloque">
         <h2>El análisis</h2>
-        <p>Lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>, el
-        mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
-        compilado a WebAssembly. No hay una segunda implementación que pueda
-        divergir, y nada de lo que escribas sale de tu navegador.</p>
+        <p>Lo realiza <a href="https://github.com/grmarco/jumper">jumper.py</a>,
+        la implementación de referencia, ejecutada en el navegador sobre CPython
+        compilado a WebAssembly. El texto no se envía a ningún servidor.</p>
       </div>
       <div class="pie-bloque">
         <h2>Cita</h2>

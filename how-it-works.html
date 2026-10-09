@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cómo funciona — Jumper</title>
-<meta name="description" content="Cómo cuenta Jumper las sílabas de un verso, cómo elige entre lecturas posibles y qué precisión tiene.">
+<meta name="description" content="Método de Jumper: cómputo silábico, desambiguación entre lecturas, análisis de rima y evaluación.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -36,128 +36,115 @@
 
   <article class="doc">
 
-    <p>Jumper escande poesía española: cuenta las sílabas métricas de cada verso,
-    dice dónde caen los acentos y nombra el tipo de verso. Es un algoritmo de
-    reglas, sin modelo entrenado sobre poemas, y lo describe
+    <p>Jumper es un algoritmo de escansión automática de poesía española. Para
+    cada verso determina el número de sílabas métricas, la posición de los
+    acentos y el tipo de verso; para cada poema, el esquema de rima y la forma
+    estrófica. Es un sistema basado en reglas, descrito en
     <a href="http://journal.sepln.org/sepln/ojs/ojs/index.php/pln/article/view/6337">Marco
     Remón y Gonzalo (2021)</a>.</p>
 
-    <h2>Contar sin silabear</h2>
+    <h2>Cómputo silábico sin silabación</h2>
 
-    <p>La idea del algoritmo original es que para medir un verso no hace falta
-    partirlo en sílabas: basta con contar sus <strong>núcleos vocálicos</strong>,
-    porque en español toda sílaba tiene uno y sólo uno. Silabear bien es difícil
-    —hay que decidir dónde va cada consonante— y para contar es innecesario.</p>
+    <p>El algoritmo no divide el verso en sílabas. Cuenta sus <strong>núcleos
+    vocálicos</strong>, ya que en español cada sílaba tiene exactamente uno. La
+    silabación completa exige decidir la adscripción de cada consonante, y esa
+    decisión no afecta al cómputo.</p>
 
-    <p>Lo que sí hay que decidir son las <strong>licencias métricas</strong>, que
-    son los sitios donde el poeta puede elegir:</p>
+    <p>El cómputo depende de las <strong>licencias métricas</strong>:</p>
 
     <ul>
-      <li><b>Sinalefa</b>: dos vocales de palabras contiguas suenan en una sola
-      sílaba. <em>la alegre</em> son tres sílabas, no cuatro. Es lo normal.</li>
-      <li><b>Dialefa</b>: esa unión se deshace y las dos vocales suenan aparte.
-      Es lo excepcional, y por eso pesa.</li>
-      <li><b>Sinéresis</b>: dos vocales de la <em>misma</em> palabra que harían
-      hiato se funden. <em>ahora</em> en dos sílabas.</li>
-      <li><b>Diéresis</b>: al revés, un diptongo se deshace. <em>rüido</em> en
-      tres.</li>
+      <li><b>Sinalefa</b>: la vocal final de una palabra y la inicial de la
+      siguiente forman una sola sílaba (<em>la alegre</em>, tres sílabas). Es la
+      opción no marcada.</li>
+      <li><b>Dialefa</b>: esas dos vocales se pronuncian en sílabas distintas. Es
+      la opción marcada.</li>
+      <li><b>Sinéresis</b>: dos vocales en hiato dentro de una palabra forman una
+      sola sílaba (<em>ahora</em>, dos sílabas).</li>
+      <li><b>Diéresis</b>: un diptongo se pronuncia en dos sílabas
+      (<em>rüido</em>, tres sílabas).</li>
     </ul>
 
-    <p>En la página, las dos fusiones se marcan con una ligadura entre las
-    vocales que se juntan —la<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>a, a<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>ho— y la diéresis
-    con la propia vocal escrita con diéresis, <span class="con-dieresis">rü</span>,
-    que ya es la convención ortográfica. Las licencias y la cesura llevan un
-    color propio, distinto del de la sílaba tónica: son dos dimensiones del
-    verso y no conviene leerlas como una sola. La ligadura va entre las dos letras y no
-    sobre la sílaba entera: una sílaba fundida puede ser ancha, y una marca
-    estirada sobre toda ella no señala nada.</p>
+    <p>La sinalefa y la sinéresis se representan con una ligadura entre las dos
+    vocales afectadas (la<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>a, a<svg class="liga" viewBox="0 0 12 6" aria-hidden="true"><path d="M1,0.6 C1,5 11,5 11,0.6"/></svg>ho); la diéresis, con la vocal escrita
+    con diéresis (<span class="con-dieresis">rü</span>). Las licencias y la
+    cesura se muestran en un color distinto del de la sílaba tónica.</p>
 
-    <p>Después, la última palabra del verso ajusta la cuenta: se suma una sílaba
-    si es aguda y se resta una si es esdrújula. Y en los versos de más de once
-    sílabas hay <strong>cesura</strong>: el verso se parte en dos hemistiquios y
-    cada uno lleva su propio ajuste, de modo que un verso puede medir catorce
-    aunque su texto sólo tenga trece sílabas escritas. Esa sílaba de más es real
-    —es una pausa— y la interfaz la señala.</p>
+    <p>La última palabra del verso modifica el cómputo: se suma una sílaba si es
+    aguda y se resta una si es esdrújula. En los versos compuestos (el
+    alejandrino y los de medida superior) la <strong>cesura</strong> divide el
+    verso en dos hemistiquios, y la regla se aplica a cada uno. Por ello un
+    alejandrino puede medir catorce sílabas métricas con trece sílabas escritas;
+    la interfaz indica esa sílaba añadida.</p>
 
-    <h2>Elegir entre lecturas</h2>
+    <h2>Desambiguación</h2>
 
-    <p>Un verso con cuatro puntos de decisión tiene dieciséis lecturas posibles.
-    Elegir una es el problema de verdad.</p>
+    <p>Cada punto de decisión duplica el número de lecturas posibles: un verso
+    con cuatro admite dieciséis. Jumper selecciona la lectura más probable,
+    no la que produce una medida regular.</p>
 
-    <p class="destacado">Jumper no busca la lectura que dé un número redondo de
-    sílabas: busca la más verosímil, y la verosimilitud está medida.</p>
+    <p>La puntuación de cada candidato es la suma de dos términos.</p>
 
-    <p>Cada candidato se puntúa con dos términos que se suman.</p>
+    <p>El primero es la <strong>probabilidad del esquema acentual</strong>,
+    <code>log P(patrón │ medida)</code>, estimada sobre corpus anotados. Para los
+    patrones no observados se usa un modelo de respaldo por hemistiquio y por
+    distancia al final del verso. Un endecasílabo con acentos en 6.ª y 10.ª es
+    frecuente; uno con acentos en 5.ª y 9.ª es excepcional.</p>
 
-    <p>El primero es la <strong>tradición</strong>: cuánto se parece su esquema
-    acentual a los que la poesía española usa de hecho. Es
-    <code>log P(patrón │ medida)</code>, estimado contando patrones en corpus
-    anotados, con respaldo por hemistiquio y por distancia al final del verso
-    para los patrones que no se han visto nunca. Un endecasílabo acentuado en 6 y
-    10 es corriente; uno acentuado en 5 y 9 casi no existe.</p>
+    <p>El segundo es la <strong>probabilidad de las licencias</strong>: cada
+    licencia aporta el logaritmo de su probabilidad relativa en su contexto. Los
+    rasgos de contexto son: identidad de las vocales, presencia de puntuación
+    entre ellas, carácter tónico o átono de las palabras, posición inicial o
+    final en la palabra y posición final en el verso. Los rasgos se estiman
+    <strong>por separado</strong>, porque su combinación produce casillas con muy
+    pocas observaciones.</p>
 
-    <p>El segundo son las <strong>licencias</strong>. Cada licencia que el
-    candidato usa aporta el logaritmo de sus probabilidades relativas en el
-    contexto en que aparece: si las dos vocales son la misma, si hay pausa de
-    puntuación entre ellas, si las palabras son plenas o átonas, si la marca cae
-    al principio o al final de la palabra, si es la última palabra del verso. Los
-    contextos entran <strong>por separado</strong> y no cruzados: cruzarlos deja
-    casillas casi vacías y el peso deja de significar nada.</p>
+    <p>Ningún peso se fija manualmente. Todos se estiman sobre una partición de
+    desarrollo separada <strong>por autor</strong> en ADSO y <strong>por
+    obra</strong> en Carvajal, de modo que ningún verso de evaluación interviene
+    en la estimación.</p>
 
-    <p>Ninguno de esos pesos está ajustado a mano. Se miden sobre una partición
-    de desarrollo separada <strong>por autor</strong> en ADSO y <strong>por
-    obra</strong> en Carvajal, nunca por verso, de manera que ningún verso de
-    evaluación haya contribuido al peso con el que se le juzga.</p>
+    <p>En un poema completo, si los versos tienden a una medida común, esa
+    medida se impone a todos ellos. En un poema polimétrico cada verso se analiza
+    de forma independiente.</p>
 
-    <p>Cuando se le da un poema entero y todos sus versos tienden a una misma
-    medida, esa medida se impone: es lo que hace un lector al que ya le han dicho
-    que tiene delante un romance. Si el poema es polimétrico, cada verso se
-    escande por sus propios méritos, porque ahí imponer una medida estropea más
-    de lo que arregla.</p>
+    <h2>Lecturas alternativas</h2>
 
-    <h2>Por qué ésta y no otra</h2>
+    <p>Al seleccionar un verso se muestran su numeración silábica y las lecturas
+    alternativas ordenadas por puntuación, con el desglose de cada término y el
+    contexto de cada licencia. Si la diferencia entre las dos primeras lecturas
+    es inferior a 0,5, el verso se marca como ambiguo.</p>
 
-    <p>Como la puntuación es una suma de términos con significado, se puede
-    enseñar. Pincha en cualquier verso —analizado solo o dentro de un poema— y
-    aparecen su numeración de sílabas y las demás lecturas ordenadas por
-    verosimilitud, cada una con su cuenta desglosada y con el contexto de cada
-    licencia dicho en castellano. Y cuando la diferencia entre la primera y la
-    segunda es pequeña, lo dice: un verso genuinamente ambiguo debe presentarse
-    como ambiguo y no como resuelto.</p>
+    <h2>Rima</h2>
 
-    <h2>La rima</h2>
+    <p>La rima se calcula sobre la representación fonológica, no sobre la
+    ortografía. Se localiza la vocal tónica de la última palabra: la secuencia
+    que comienza en ella constituye la rima consonante, y sus vocales, la rima
+    asonante. Se neutralizan las distinciones solo gráficas: <em>b</em> y
+    <em>v</em>, la <em>h</em> muda, la <em>u</em> de <em>qu</em> y <em>gu</em>, y
+    <em>ll</em> e <em>y</em> (yeísmo). En los diptongos se toma el núcleo, de
+    modo que <em>tierra</em> rima con <em>guerra</em>.</p>
 
-    <p>La rima se calcula sobre los <strong>fonemas</strong>, no sobre la
-    ortografía. Se localiza la vocal tónica de la última palabra y se toma lo que
-    va detrás: eso es la rima consonante, y sólo sus vocales son la asonante. Por
-    el camino se neutraliza lo que la escritura distingue y el oído no —b y v, la
-    <em>h</em> muda, la <em>u</em> muda de <em>qu</em> y <em>gu</em>, y
-    <em>ll</em> con <em>y</em> por yeísmo—. El núcleo del diptongo es el que
-    cuenta, de modo que <em>tierra</em> rima con <em>guerra</em>.</p>
+    <p>Para cada poema se muestran los grupos de rima (letra, terminación y
+    palabras). Para cada verso, la palabra rimante, sus terminaciones consonante
+    y asonante, la terminación que determina el grupo y los versos con los que lo
+    comparte.</p>
 
-    <p>La página lo enseña entero: los grupos de rima del poema —qué letra, qué
-    terminación y con qué palabras—, y en el detalle de cada verso su palabra
-    rimante, sus dos terminaciones, cuál de las dos manda en este poema y con
-    qué versos comparte grupo.</p>
+    <p>El análisis de rima reconoce la <strong>forma estrófica</strong> (soneto,
+    romance, cuartetos, tercetos encadenados, pareados) y la usa en el cálculo.
+    El esquema se calcula bajo dos hipótesis, con prioridad de la consonancia y
+    solo con asonancia, y se elige la que produce una forma reconocida; sin este
+    paso, un romance se fragmenta en pares consonantes. Una vez reconocida, la
+    forma <strong>asigna los versos sueltos</strong>: en un soneto ABBA ABBA, un
+    verso que solo asuena con el grupo B se asigna a B.</p>
 
-    <p>Sobre eso se agrupan los versos y se reconoce la <strong>forma
-    estrófica</strong>: soneto, romance, cuartetos, terceto encadenado, pareados.
-    La forma no es un adorno del resultado, es parte del cálculo. Se prueban las
-    dos hipótesis —resolver primero la consonancia o sólo la asonancia— y gana la
-    que produzca una forma reconocible; sin eso, un romance se despedaza en pares
-    consonantes que no significan nada. Y una vez reconocida, la forma
-    <strong>completa los versos sueltos que reclama</strong>: en un soneto ABBA
-    ABBA, un verso que sólo asuena con el grupo B pertenece a B, porque la forma
-    lo exige y un lector lo ve.</p>
+    <h2>Evaluación</h2>
 
-    <h2>Qué precisión tiene</h2>
-
-    <p>Escansión completa: la medida y todos los acentos del verso deben
-    coincidir con la anotación humana. Un solo acento de diferencia cuenta como
-    error.</p>
+    <p>La métrica es la exactitud de la escansión completa: la medida y todos los
+    acentos deben coincidir con la anotación manual. Una diferencia en un solo
+    acento cuenta como error.</p>
 
     <table>
-      <thead><tr><th>corpus</th><th>versos</th><th class="n">artículo (2021)</th><th class="n">hoy</th></tr></thead>
+      <thead><tr><th>corpus</th><th>versos</th><th class="n">artículo (2021)</th><th class="n">versión actual</th></tr></thead>
       <tbody>
         <tr><td>ADSO100</td><td>endecasílabos revisados a mano</td><td class="n">0,9487</td><td class="n">0,9573</td></tr>
         <tr><td>ADSO</td><td>sonetos del Siglo de Oro</td><td class="n">0,9468</td><td class="n">0,9570</td></tr>
@@ -165,43 +152,38 @@
       </tbody>
     </table>
 
-    <p class="fuente">Sobre las particiones que no se han usado para medir nada:
-    ADSO 0,9587 y Carvajal 0,8460.</p>
+    <p class="fuente">Sobre las particiones de prueba, no usadas en la
+    estimación: ADSO 0,9587; Carvajal 0,8460.</p>
 
-    <p>En <a href="lote.html">por lotes</a> se puede escandir un corpus entero
-    —un fichero por obra— y descargar la tabla en Excel o en CSV, con una fila
-    por verso. También se analiza en el navegador: los ficheros no se suben a
-    ningún sitio.</p>
+    <p>Rima, sobre la poesía completa de Carvajal: 0,712 de esquemas exactos y
+    0,8355 de versos con la letra correcta (Rantanplan: 0,466 y 0,6090). Sobre
+    los 692 sonetos completos de ADSO, el 96,1 % se reconoce como soneto.</p>
 
-    <p>Rima, en la poesía completa de Carvajal: 0,712 de esquemas exactos y
-    0,8355 de versos con su letra correcta, frente a 0,466 y 0,6090 de
-    Rantanplan. En los 692 sonetos de ADSO, 0,961.</p>
+    <h3>Fuentes de error</h3>
 
-    <h3>Lo que queda</h3>
+    <p>En ADSO100 la medida correcta está entre los candidatos de todos los
+    versos. Los errores restantes se deben principalmente a la
+    <strong>tonicidad léxica</strong> (qué palabras se acentúan). Una parte de
+    ellos refleja discrepancias entre anotaciones: de los 1387 versos comunes a
+    ADSO y ADSO100, 16 están anotados de forma distinta.</p>
 
-    <p>El silabeo está resuelto: en ADSO100 no queda un solo verso cuya medida
-    correcta sea inalcanzable. Lo que falla es sobre todo <strong>tonicidad
-    léxica</strong> —qué palabras llevan acento— y ahí buena parte del residuo es
-    desacuerdo entre corpus, no error del algoritmo: de los 1387 versos que ADSO
-    y ADSO100 comparten, 16 están anotados de forma distinta.</p>
+    <h2>Implementación</h2>
 
-    <h2>Esta página y el algoritmo son el mismo programa</h2>
+    <p>Esta web ejecuta <code>jumper.py</code>, el mismo fichero que se
+    distribuye y se evalúa, sobre CPython compilado a WebAssembly
+    (<a href="https://pyodide.org">Pyodide</a>). No existe una implementación
+    paralela en JavaScript. La primera visita descarga el intérprete, lo que
+    tarda unos segundos; después queda en la caché del navegador. El análisis se
+    realiza en el navegador y el texto no se envía a ningún servidor.</p>
 
-    <p>Durante años esta web llevaba una traducción del algoritmo a JavaScript.
-    Funcionaba, pero se quedó en la versión de 2021 mientras el original seguía
-    mejorando, y la página avisaba de que era menos precisa: 87 % frente a 95 %.</p>
+    <p class="fuente">Una prueba automática compara verso a verso la salida del
+    motor en el navegador con la del intérprete de Python del sistema y exige que
+    sean idénticas. Un flujo semanal actualiza <code>jumper.py</code> desde el
+    repositorio del motor.</p>
 
-    <p>Ya no hay traducción. La página ejecuta <code>jumper.py</code> —el mismo
-    fichero que se descarga, el mismo que se evalúa contra los corpus— dentro de
-    CPython compilado a WebAssembly. La primera visita descarga el intérprete y
-    tarda un par de segundos; después queda en la caché del navegador. Nada de lo
-    que escribas sale de tu ordenador, porque no hay servidor que lo reciba.</p>
-
-    <p class="fuente">Una prueba automática compara, verso a verso, lo que
-    devuelve el motor del navegador con lo que devuelve el Python del sistema, y
-    exige que sean idénticos. Otra trae <code>jumper.py</code> del repositorio del
-    motor cada semana. Es lo que impide que el problema vuelva dentro de seis
-    meses.</p>
+    <p>La página <a href="lote.html">Por lotes</a> analiza un corpus completo, un
+    fichero por obra, y exporta los resultados en Excel o CSV, con una fila por
+    verso.</p>
 
     <h2>Referencias</h2>
 
@@ -212,8 +194,8 @@
       <li>Navarro Colorado, B. (2016). <em>Corpus of Spanish Golden-Age
       Sonnets</em>.</li>
       <li>Carvajal, A. <em>Poesía completa</em>, anotada métricamente.</li>
-      <li><a href="https://github.com/grmarco/jumper">grmarco/jumper</a> — el
-      algoritmo, un solo fichero sin dependencias.</li>
+      <li><a href="https://github.com/grmarco/jumper">grmarco/jumper</a>:
+      implementación de referencia, un solo fichero sin dependencias.</li>
     </ul>
 
   </article>
@@ -222,15 +204,14 @@
     <div class="pie-rejilla">
       <div class="pie-bloque">
         <h2>Jumper</h2>
-        <p>Escansión automática de poesía española. Cuenta las sílabas métricas,
-        sitúa los acentos, nombra el tipo de verso y reconoce la rima.</p>
+        <p>Escansión automática de poesía española: cómputo silábico, acentos,
+        tipo de verso y esquema de rima.</p>
       </div>
       <div class="pie-bloque">
         <h2>El análisis</h2>
-        <p>Lo hace <a href="https://github.com/grmarco/jumper">jumper.py</a>, el
-        mismo fichero que se distribuye y se evalúa, ejecutado aquí sobre CPython
-        compilado a WebAssembly. No hay una segunda implementación que pueda
-        divergir, y nada de lo que escribas sale de tu navegador.</p>
+        <p>Lo realiza <a href="https://github.com/grmarco/jumper">jumper.py</a>,
+        la implementación de referencia, ejecutada en el navegador sobre CPython
+        compilado a WebAssembly. El texto no se envía a ningún servidor.</p>
       </div>
       <div class="pie-bloque">
         <h2>Cita</h2>
