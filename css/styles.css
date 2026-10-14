@@ -451,6 +451,8 @@ footer{border-top:1px solid var(--linea);margin-top:3.5rem;padding-top:2rem}
   font-variant-numeric:tabular-nums;text-align:right;color:var(--tinta-tenue);
 }
 .reparto .n{color:var(--tinta)}
+.otros{margin-top:.5rem;font-size:.85rem}
+.otros summary{cursor:pointer;color:var(--tinta-suave);font-style:italic}
 
 .tabla{border-collapse:collapse;width:100%;font-size:.82rem;margin-top:.6rem}
 .tabla th{

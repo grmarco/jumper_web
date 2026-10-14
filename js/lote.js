@@ -31,16 +31,24 @@ async function analizarObra(nombre, texto) {
 /** El recuento, dibujado. */
 function resumen(obras) {
   const r = resumenDe(filas, obras);
-  const barra = (cuenta, total, limite = 8) => {
-    const orden = Object.entries(cuenta).sort((a, b) => b[1] - a[1]);
-    const visibles = orden.slice(0, limite);
-    const resto = orden.slice(limite).reduce((s, [, n]) => s + n, 0);
-    if (resto) visibles.push([`otros (${orden.length - limite})`, resto]);
-    return `<ul class="reparto">${visibles.map(([k, n]) => `
+  const filaDe = ([k, n], total) => `
       <li><span class="clave">${escapar(k)}</span>
         <span class="tira"><i style="width:${(100 * n / total).toFixed(1)}%"></i></span>
         <span class="n">${n}</span>
-        <span class="pct">${(100 * n / total).toFixed(1)} %</span></li>`).join('')}</ul>`;
+        <span class="pct">${(100 * n / total).toFixed(1)} %</span></li>`;
+  // lo que no cabe entre los más frecuentes no se pierde en un "otros": va
+  // desplegado debajo, con todos sus valores
+  const barra = (cuenta, total, limite = 8) => {
+    const orden = Object.entries(cuenta).sort((a, b) => b[1] - a[1]);
+    const resto = orden.slice(limite);
+    const lista = (items) => `<ul class="reparto">${items.map((e) => filaDe(e, total)).join('')}</ul>`;
+    if (!resto.length) return lista(orden);
+    const suma = resto.reduce((s, [, n]) => s + n, 0);
+    return lista(orden.slice(0, limite)) + `
+      <details class="otros" open>
+        <summary>otros (${resto.length}) · ${suma} · ${(100 * suma / total).toFixed(1)} %</summary>
+        ${lista(resto)}
+      </details>`;
   };
   return `
     <section class="tarjeta">
